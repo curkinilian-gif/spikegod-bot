@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>вњ¦ Asteroid Dodge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#03010a;color:#fff;font-family:'Inter',sans-serif}
+  #app{width:100%;max-width:420px;height:100vh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  canvas{display:block;flex:1;width:100%;height:100%;background:#03010a;position:absolute;inset:0}
+  .header{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;background:linear-gradient(180deg,rgba(3,1,10,.9),transparent);pointer-events:none}
+  .header>*{pointer-events:auto}
+  .game-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:rgba(255,255,255,.5);transition:all .15s;background:rgba(255,255,255,.06);flex-shrink:0}
+  .game-back:active{background:rgba(255,255,255,.1);transform:scale(.9)}
+  .score-box{text-align:right}
+  .score-label{font-size:9px;color:rgba(255,255,255,.25);font-weight:600;letter-spacing:.5px}
+  .score{font-size:22px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .best{font-size:10px;color:rgba(255,255,255,.2);font-weight:600}
+  .profile-btn{display:none;align-items:center;gap:6px;cursor:pointer;pointer-events:auto}
+  .profile-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;overflow:hidden;background-size:cover;background-position:center;flex-shrink:0}
+  .profile-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .auth-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .auth-modal.show{display:flex}
+  .auth-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .auth-title{text-align:center;font-size:16px;font-weight:700;margin-bottom:16px;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .auth-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;outline:none;margin-bottom:12px;font-family:'Inter',sans-serif;transition:border-color .2s;text-align:center}
+  .auth-input:focus{border-color:rgba(168,85,247,.3)}
+  .auth-input::placeholder{color:rgba(255,255,255,.15)}
+  .auth-submit{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .auth-submit:active{transform:scale(.97)}
+  .auth-switch{text-align:center;font-size:11px;color:rgba(255,255,255,.2);cursor:pointer}
+  .auth-error{font-size:11px;color:#ef4444;text-align:center;margin-bottom:8px;display:none}
+  .prof-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .prof-modal.show{display:flex}
+  .prof-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .prof-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;overflow:hidden;background-size:cover;background-position:center}
+  .prof-email{text-align:center;font-size:11px;color:rgba(255,255,255,.15);margin-bottom:16px}
+  .prof-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:500;outline:none;margin-bottom:14px;font-family:'Inter',sans-serif;transition:border-color .2s;text-align:center}
+  .prof-input:focus{border-color:rgba(168,85,247,.3)}
+  .prof-input::placeholder{color:rgba(255,255,255,.15)}
+  .prof-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+  .prof-em{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .1s}
+  .prof-em:active{transform:scale(.85);background:rgba(168,85,247,.2)}
+  .prof-em.active{border-color:#a855f7;background:rgba(168,85,247,.15)}
+  .prof-em-sm{width:auto!important;aspect-ratio:auto!important;padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600}
+  .prof-save{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .prof-save:active{transform:scale(.97)}
+  .prof-logout{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(239,68,68,.15);background:rgba(239,68,68,.06);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .prof-logout:active{transform:scale(.97)}
+  .prof-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:rgba(255,255,255,.3);transition:all .15s}
+  .prof-back:active{background:rgba(255,255,255,.06);transform:scale(.9)}
+  .game-over{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px);flex-direction:column}
+  .game-over.show{display:flex}
+  .go-title{font-size:48px;margin-bottom:8px}
+  .go-score{font-size:20px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:14px}
+  .go-btn{padding:12px 32px;border-radius:14px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+  .go-btn:active{transform:scale(.97)}
+
+  .hud{position:absolute;top:56px;left:50%;transform:translateX(-50%);z-index:10;text-align:center;pointer-events:none}
+  .hud-time{font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;color:rgba(255,255,255,.08);letter-spacing:2px}
+  .hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;font-size:11px;color:rgba(255,255,255,.12);font-weight:500;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="gameCanvas"></canvas>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="game-back" onclick="history.back()">в†ђ</div>
+    <div class="profile-btn" id="profileBtn">
+      <div class="profile-circle" id="profCircle">рџљЂ</div>
+      <span class="profile-name" id="profName">РќРёРє</span>
+    </div>
+  </div>
+  <div class="score-box">
+    <div class="score-label">Р Р•РљРћР Р”</div>
+    <div class="score" id="bestDisplay">0</div>
+    <div class="best" id="lastScoreDisplay"></div>
+  </div>
+</div>
+
+<div class="hud">
+  <div class="hud-time" id="timeDisplay">0</div>
+</div>
+
+<div class="hint">в†ђ Р·Р°Р¶РјРё Р»РµРІСѓСЋ/РїСЂР°РІСѓСЋ С‡Р°СЃС‚СЊ в†’</div>
+
+<div class="game-over" id="gameOver">
+  <div class="go-title">рџ’Ґ</div>
+  <div class="go-score" id="finalScore">0 СЃРµРє</div>
+  <button class="go-btn" onclick="startGame()">рџ”„ Р—Р°РЅРѕРІРѕ</button>
+</div>
+
+
+</div>
+
+<div class="auth-modal" id="authModal">
+  <div class="auth-box">
+    <div class="auth-title" id="authTitle">вњ¦ Р’С…РѕРґ</div>
+    <div class="auth-error" id="authError"></div>
+    <input class="auth-input" id="authEmail" type="email" placeholder="Email" autocomplete="off" list="knownEmails">
+    <datalist id="knownEmails"></datalist>
+    <button class="auth-submit" id="authSubmit">Р’РѕР№С‚Рё</button>
+    <div class="auth-switch" id="authSwitch">РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</div>
+  </div>
+</div>
+
+<div class="prof-modal" id="profModal">
+  <div class="prof-box">
+    <div style="display:flex;align-items:center;margin-bottom:12px">
+      <div class="prof-back" id="profBack">в†ђ</div>
+      <div style="flex:1;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.25)">РџСЂРѕС„РёР»СЊ</div>
+      <div style="width:30px"></div>
+    </div>
+    <div class="prof-avatar" id="profAvatar">рџљЂ</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:14px;flex-wrap:wrap">
+      <button class="prof-em prof-em-sm" id="profPhotoBtn">рџ–ј С„РѕС‚Рѕ</button>
+      <button class="prof-em prof-em-sm" id="profEmojiBtn">рџЂ СЌРјРѕРґР·Рё</button>
+    </div>
+    <input type="file" id="profFileInput" accept="image/*" style="display:none">
+    <div class="prof-email" id="profEmail">email@mail.com</div>
+    <input class="prof-input" id="profNick" type="text" placeholder="РќРёРєРЅРµР№Рј" maxlength="15">
+    <div class="prof-grid" id="profGrid" style="display:none"></div>
+    <button class="prof-save" id="profSave">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
+    <button class="prof-logout" id="profLogout">Р’С‹Р№С‚Рё</button>
+  </div>
+</div>
+
+<script>
+// в•ђв•ђ AUTH в•ђв•ђ
+const API = window.location.origin
+const AKEY = 'starMerge'
+const BEST_KEY = 'astDodgeBest'
+let token = localStorage.getItem(AKEY+'Token') || ''
+let userEmail = localStorage.getItem(AKEY+'Email') || ''
+let userNick = localStorage.getItem(AKEY+'Nick') || ''
+let userAvatar = localStorage.getItem(AKEY+'Avatar') || ''
+let isRegister = false
+let selectedAvatar = 'рџљЂ'
+const AVATARS = ['рџЋ','рџљЂ','рџЊџ','рџ‘ѕ','рџЋ®','рџ”Ґ','рџ’Ћ','рџЊ€','рџЄђ','рџ‘ЁвЂЌрџљЂ','рџ›ё','рџЊЊ','вљЎ','рџЋЇ','рџ’«','рџђ‰','рџ¦Љ','рџђ±','вќ¤пёЏ','рџ’њ','в­ђ','рџЊ™','рџ¦„','рџЌЂ']
+const COLORS = ['#7c3aed','#2563eb','#059669','#d97706','#dc2626','#db2777','#4f46e5','#0891b2']
+
+function apiCall(path, data, method) {
+  const headers = {'Content-Type':'application/json'}
+  if (token) headers['Authorization'] = 'Bearer ' + token
+  return fetch(API + path, {method: method || 'POST', headers, body: data ? JSON.stringify(data) : undefined}).then(r => r.json()).catch(() => ({error:'РћС€РёР±РєР° СЃРѕРµРґРёРЅРµРЅРёСЏ'}))
+}
+function getColor(email) {
+  let h = 0
+  for (let i = 0; i < email.length; i++) h = ((h << 5) - h) + email.charCodeAt(i)
+  return COLORS[Math.abs(h) % COLORS.length]
+}
+function setAvatarPreview(src, isImg) {
+  const el = document.getElementById('profAvatar')
+  if (isImg) { el.innerHTML = ''; el.style.backgroundImage = 'url("'+src+'")'; el.style.backgroundSize = 'cover'; el.style.fontSize = '0' }
+  else { el.innerHTML = ''; el.textContent = src; el.style.backgroundImage = ''; el.style.backgroundSize = ''; el.style.fontSize = '32px' }
+}
+function saveEmail(email) {
+  let list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+  if (!list.includes(email)) { list.push(email); localStorage.setItem('knownEmails', JSON.stringify(list)) }
+}
+function loadEmails() {
+  const list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+  const dl = document.getElementById('knownEmails')
+  dl.innerHTML = list.map(e => '<option value="'+e+'">').join('')
+}
+function showAuthError(msg) { const e = document.getElementById('authError'); e.textContent = msg; e.style.display = 'block' }
+function hideAuthError() { document.getElementById('authError').style.display = 'none' }
+function updateUI() {
+  const authed = token && userEmail
+  document.getElementById('profileBtn').style.display = authed ? 'flex' : 'none'
+  if (authed) {
+    const av = userAvatar || 'рџљЂ'; const nick = userNick || userEmail.split('@')[0]
+    const c = document.getElementById('profCircle'); const n = document.getElementById('profName')
+    if (av.startsWith('data:image')) { c.innerHTML = ''; c.style.backgroundImage = 'url("'+av+'")'; c.style.backgroundSize = 'cover'; c.style.fontSize = '0' }
+    else { c.innerHTML = ''; c.textContent = av; c.style.backgroundImage = ''; c.style.background = getColor(userEmail); c.style.fontSize = '13px' }
+    n.textContent = nick
+  }
+}
+
+// в•ђв•ђ CANVAS SETUP в•ђв•ђ
+const canvas = document.getElementById('gameCanvas')
+const ctx = canvas.getContext('2d')
+let W, H
+
+function resize() {
+  const app = document.getElementById('app')
+  const rect = app.getBoundingClientRect()
+  canvas.width = W = rect.width || 420
+  canvas.height = H = rect.height || 600
+}
+window.addEventListener('resize', resize)
+
+// в•ђв•ђ GAME STATE в•ђв•ђ
+let ship = { x: 0, y: 0, w: 28, h: 36 }
+let asteroids = []
+let particles = []
+let stars = []
+let gameRunning = false
+let gameOver = false
+let gameTime = 0
+let score = 0
+let highScore = parseInt(localStorage.getItem(BEST_KEY) || '0')
+let lastScore = 0
+let spawnTimer = 0
+let spawnInterval = 60
+let speed = 1
+let combo = 0
+let animId = null
+let maxAsteroids = 3
+let levelTimer = 0
+
+// в•ђв•ђ STAR BACKGROUND в•ђв•ђ
+function initStars() {
+  stars = []
+  for (let i = 0; i < 80; i++) {
+    stars.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.5+0.3, s: Math.random()*0.5+0.2, o: Math.random() })
+  }
+}
+
+// в•ђв•ђ SHIP в•ђв•ђ
+function drawShip() {
+  const x = ship.x, y = ship.y
+  ctx.save()
+  ctx.translate(x, y)
+  // body
+  const grd = ctx.createLinearGradient(0, -ship.h/2, 0, ship.h/2)
+  grd.addColorStop(0, '#e2dff0')
+  grd.addColorStop(0.3, '#c8c4e0')
+  grd.addColorStop(0.7, '#a8a0c8')
+  grd.addColorStop(1, '#8880a8')
+  ctx.fillStyle = grd
+  ctx.beginPath()
+  ctx.moveTo(0, -ship.h/2)
+  ctx.lineTo(-ship.w/2, ship.h/2)
+  ctx.lineTo(-ship.w/4, ship.h/2 - 4)
+  ctx.lineTo(0, ship.h/2 - 2)
+  ctx.lineTo(ship.w/4, ship.h/2 - 4)
+  ctx.lineTo(ship.w/2, ship.h/2)
+  ctx.closePath()
+  ctx.fill()
+  // nose
+  ctx.fillStyle = '#dc2626'
+  ctx.beginPath()
+  ctx.moveTo(0, -ship.h/2)
+  ctx.lineTo(-ship.w/4, -ship.h/4)
+  ctx.lineTo(0, -ship.h/4 + 2)
+  ctx.lineTo(ship.w/4, -ship.h/4)
+  ctx.closePath()
+  ctx.fill()
+  // window
+  ctx.fillStyle = 'rgba(56,189,248,.6)'
+  ctx.beginPath()
+  ctx.arc(0, 0, 5, 0, Math.PI*2)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255,255,255,.3)'
+  ctx.beginPath()
+  ctx.arc(-1, -1, 2, 0, Math.PI*2)
+  ctx.fill()
+  // flame
+  const flicker = Math.random() * 4 + 2
+  ctx.fillStyle = 'rgba(255,200,50,.7)'
+  ctx.beginPath()
+  ctx.moveTo(-6, ship.h/2 - 2)
+  ctx.lineTo(0, ship.h/2 + 6 + flicker)
+  ctx.lineTo(6, ship.h/2 - 2)
+  ctx.closePath()
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255,100,0,.4)'
+  ctx.beginPath()
+  ctx.moveTo(-4, ship.h/2 - 1)
+  ctx.lineTo(0, ship.h/2 + 10 + flicker*1.5)
+  ctx.lineTo(4, ship.h/2 - 1)
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
+// в•ђв•ђ ASTEROIDS в•ђв•ђ
+function spawnAsteroid() {
+  const size = 14 + Math.random() * 20
+  const spd = 0.6 + Math.random() * (speed * 0.8 + 0.4)
+  const x = Math.random() * (W - size * 2) + size
+  const rotSpeed = (Math.random() - 0.5) * 0.1
+  const type = Math.floor(Math.random() * 4)
+  asteroids.push({
+    x, y: -size, w: size, h: size,
+    spd, rot: Math.random() * Math.PI * 2, rotSpeed, type,
+    hp: type === 3 ? 3 : type === 2 ? 2 : 1,
+    wobble: Math.random() * 0.5 + 0.1, phase: Math.random() * Math.PI * 2
+  })
+}
+
+function drawAsteroid(a) {
+  ctx.save()
+  ctx.translate(a.x, a.y)
+  ctx.rotate(a.rot)
+  const s = a.w / 2
+  // glow
+  const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, s + 6)
+  grd.addColorStop(0, 'rgba(255,100,50,.06)')
+  grd.addColorStop(1, 'transparent')
+  ctx.fillStyle = grd
+  ctx.beginPath()
+  ctx.arc(0, 0, s + 6, 0, Math.PI * 2)
+  ctx.fill()
+  // body
+  const c1 = a.type === 3 ? '#6b3a2a' : a.type === 2 ? '#5a4a3a' : '#3a3a3a'
+  const c2 = a.type === 3 ? '#8a5a3a' : a.type === 2 ? '#7a6a4a' : '#5a5a5a'
+  const c3 = a.type === 3 ? '#4a2a1a' : a.type === 2 ? '#3a2a1a' : '#2a2a2a'
+  ctx.fillStyle = c1
+  ctx.beginPath()
+  const points = 7 + a.type
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * Math.PI * 2 - Math.PI / 2
+    const r = s * (0.7 + 0.3 * Math.sin(i * 2.5 + a.wobble))
+    const px = Math.cos(angle) * r
+    const py = Math.sin(angle) * r
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+  ctx.fill()
+  // highlights
+  ctx.fillStyle = c2
+  ctx.beginPath()
+  ctx.arc(-s*0.2, -s*0.2, s*0.3, 0, Math.PI*2)
+  ctx.fill()
+  ctx.fillStyle = c3
+  ctx.beginPath()
+  ctx.arc(s*0.15, s*0.15, s*0.2, 0, Math.PI*2)
+  ctx.fill()
+  // crater
+  ctx.fillStyle = 'rgba(0,0,0,.15)'
+  ctx.beginPath()
+  ctx.arc(s*0.3, -s*0.1, s*0.15, 0, Math.PI*2)
+  ctx.fill()
+  ctx.restore()
+}
+
+// в•ђв•ђ PARTICLES в•ђв•ђ
+function spawnExplosion(x, y, count, color, spd) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const speed = (Math.random() * (spd || 3) + 1)
+    particles.push({
+      x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+      life: 1, decay: 0.01 + Math.random() * 0.03, r: 1 + Math.random() * 3,
+      color: color || `hsl(${30+Math.random()*30},100%,${50+Math.random()*30}%)`
+    })
+  }
+}
+function spawnTrail() {
+  for (let i = 0; i < 2; i++) {
+    particles.push({
+      x: ship.x + (Math.random()-0.5)*8, y: ship.y + ship.h/2 + 2,
+      vx: (Math.random()-0.5)*0.5, vy: Math.random()*0.5+0.3,
+      life: 1, decay: 0.03 + Math.random() * 0.04, r: 1 + Math.random() * 2,
+      color: `rgba(255,200,50,${0.3+Math.random()*0.4})`
+    })
+  }
+}
+
+// в•ђв•ђ COLLISION в•ђв•ђ
+function checkCollision(a) {
+  const sx = ship.x, sy = ship.y, sw = ship.w/2 - 4, sh = ship.h/2 - 4
+  const ax = a.x, ay = a.y, ar = a.w/2 - 2
+  const cx = Math.max(sx - sw, Math.min(ax, sx + sw))
+  const cy = Math.max(sy - sh, Math.min(ay, sy + sh))
+  const dx = ax - cx, dy = ay - cy
+  return dx * dx + dy * dy < ar * ar
+}
+
+// в•ђв•ђ GAME LOOP в•ђв•ђ
+function update() {
+  if (!gameRunning || gameOver) return
+  gameTime++
+  const secs = gameTime / 60
+  // continuous difficulty scaling by seconds survived
+  speed = Math.min(1 + secs * 0.06, 5)
+  spawnInterval = Math.max(60 - secs * 1.2, 12)
+  maxAsteroids = Math.min(3 + Math.floor(secs / 2.5), 20)
+  // spawn
+  spawnTimer++
+  if (spawnTimer >= spawnInterval && asteroids.length < maxAsteroids) {
+    spawnAsteroid()
+    spawnTimer = 0
+    if (Math.random() < 0.15 && asteroids.length < maxAsteroids) spawnAsteroid()
+  }
+  // update asteroids
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const a = asteroids[i]
+    a.y += a.spd
+    a.rot += a.rotSpeed
+    a.x += Math.sin(a.y * 0.01 + a.phase) * a.wobble * 0.3
+    if (a.y > H + a.h) { asteroids.splice(i, 1); continue }
+    if (checkCollision(a)) {
+      spawnExplosion(ship.x, ship.y, 40, '#ff6b35', 4)
+      spawnExplosion(ship.x, ship.y, 20, '#ffd700', 2)
+      endGame()
+      return
+    }
+  }
+  // particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]
+    p.x += p.vx; p.y += p.vy
+    p.life -= p.decay
+    if (p.life <= 0) { particles.splice(i, 1); continue }
+    p.vy += 0.02
+  }
+  spawnTrail()
+  // score
+  if (gameTime % 15 === 0) score++
+  if (score > highScore) highScore = score
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H)
+  // bg
+  const grd = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.7)
+  grd.addColorStop(0, 'rgba(20,10,40,1)')
+  grd.addColorStop(1, '#03010a')
+  ctx.fillStyle = grd
+  ctx.fillRect(0, 0, W, H)
+  // stars
+  const t = Date.now() / 1000
+  stars.forEach(s => {
+    const alpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.s + s.o))
+    ctx.fillStyle = `rgba(255,255,255,${alpha*0.6})`
+    ctx.beginPath()
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2)
+    ctx.fill()
+  })
+  // asteroids
+  asteroids.forEach(drawAsteroid)
+  // particles
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life
+    ctx.fillStyle = p.color
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2)
+    ctx.fill()
+  })
+  ctx.globalAlpha = 1
+  // ship
+  if (!gameOver) drawShip()
+  // hud time
+  const secs = Math.floor(gameTime / 60)
+  document.getElementById('timeDisplay').textContent = secs
+  document.getElementById('bestDisplay').textContent = highScore
+}
+
+function loop() {
+  update()
+  draw()
+  animId = requestAnimationFrame(loop)
+}
+
+// в•ђв•ђ GAME CONTROLS в•ђв•ђ
+function startGame() {
+  gameOver = false
+  gameRunning = true
+  gameTime = 0
+  asteroids = []
+  particles = []
+  spawnTimer = 0
+  speed = 1
+  spawnInterval = 60
+  maxAsteroids = 3
+  levelTimer = 0
+  score = 0
+  ship.x = W / 2
+  ship.y = H - 60
+  document.getElementById('gameOver').classList.remove('show')
+  if (!animId) loop()
+}
+
+function endGame() {
+  gameOver = true
+  gameRunning = false
+  if (score > highScore) { highScore = score; localStorage.setItem(BEST_KEY, String(highScore)) }
+  lastScore = score
+  document.getElementById('finalScore').textContent = score + ' СЃРµРє'
+  document.getElementById('lastScoreDisplay').textContent = 'РїСЂРѕС€Р»С‹Р№: ' + (lastScore || '-') + ' СЃРµРє'
+  document.getElementById('gameOver').classList.add('show')
+  updateBestDisplay()
+  // save score to server if authed
+  if (token) {
+    apiCall('/api/save', {game:'asteroid-dodge', data:{highScore, lastScore}})
+  }
+}
+
+function updateBestDisplay() {
+  document.getElementById('bestDisplay').textContent = highScore
+}
+
+// в•ђв•ђ INPUT в•ђв•ђ
+const MOVE_SPEED = 5
+let keys = {}
+document.addEventListener('keydown', e => {
+  keys[e.key] = true
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault()
+})
+document.addEventListener('keyup', e => { keys[e.key] = false })
+
+function handleInput() {
+  if (!gameRunning || gameOver) return
+  if (keys['ArrowLeft']) ship.x -= MOVE_SPEED
+  if (keys['ArrowRight']) ship.x += MOVE_SPEED
+  if (keys['a'] || keys['A']) ship.x -= MOVE_SPEED
+  if (keys['d'] || keys['D']) ship.x += MOVE_SPEED
+  if (moveDir) ship.x += moveDir * MOVE_SPEED
+  ship.x = Math.max(ship.w/2, Math.min(W - ship.w/2, ship.x))
+}
+
+// tap controls вЂ” hold left/right half to steer
+let moveDir = 0
+canvas.addEventListener('touchstart', e => {
+  const t = e.touches[0]
+  const rect = canvas.getBoundingClientRect()
+  const cx = t.clientX - rect.left
+  moveDir = cx < W / 2 ? -1 : 1
+}, {passive:true})
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault()
+  const t = e.touches[0]
+  const rect = canvas.getBoundingClientRect()
+  const cx = t.clientX - rect.left
+  moveDir = cx < W / 2 ? -1 : 1
+}, {passive:false})
+canvas.addEventListener('touchend', () => { moveDir = 0 })
+canvas.addEventListener('touchcancel', () => { moveDir = 0 })
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect()
+  const cx = e.clientX - rect.left
+  moveDir = cx < W / 2 ? -1 : 1
+})
+canvas.addEventListener('mouseup', () => { moveDir = 0 })
+canvas.addEventListener('mouseleave', () => { moveDir = 0 })
+
+// в•ђв•ђ INPUT LOOP в•ђв•ђ
+setInterval(handleInput, 16)
+
+// в•ђв•ђ OVERLAY в•ђв•ђ
+async function loadProgress() {
+  if (!token) return
+  try {
+    const r = await fetch(API + '/api/load?game=asteroid-dodge', {headers:{'Authorization':'Bearer '+token}})
+    const res = await r.json()
+    if (res.ok && res.data != null) {
+      if (res.data.highScore) highScore = res.data.highScore
+      if (res.data.lastScore) lastScore = res.data.lastScore
+      localStorage.setItem(BEST_KEY, String(highScore))
+    }
+  } catch(e) {}
+  updateBestDisplay()
+}
+
+// в•ђв•ђ AUTH HANDLERS в•ђв•ђ
+document.getElementById('authSubmit').onclick = async () => {
+  hideAuthError()
+  const email = document.getElementById('authEmail').value.trim().toLowerCase()
+  if (!email) { showAuthError('Р’РІРµРґРёС‚Рµ email'); return }
+  const ep = isRegister ? '/api/register' : '/api/login'
+  const res = await apiCall(ep, {email})
+  if (res.error) { showAuthError(res.error); return }
+  token = res.token; userEmail = res.email
+  userNick = res.nickname || ''; userAvatar = res.avatar || ''
+  localStorage.setItem(AKEY+'Token', token)
+  localStorage.setItem(AKEY+'Email', userEmail)
+  localStorage.setItem(AKEY+'Nick', userNick)
+  localStorage.setItem(AKEY+'Avatar', userAvatar)
+  saveEmail(userEmail)
+  document.getElementById('authModal').classList.remove('show')
+  document.getElementById('authEmail').value = ''
+  updateUI()
+  loadProgress()
+}
+document.getElementById('authSwitch').onclick = () => {
+  isRegister = !isRegister
+  document.getElementById('authTitle').textContent = isRegister ? 'вњ¦ Р РµРіРёСЃС‚СЂР°С†РёСЏ' : 'вњ¦ Р’С…РѕРґ'
+  document.getElementById('authSubmit').textContent = isRegister ? 'Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ' : 'Р’РѕР№С‚Рё'
+  document.getElementById('authSwitch').textContent = isRegister ? 'РЈР¶Рµ РµСЃС‚СЊ Р°РєРєР°СѓРЅС‚? Р’РѕР№С‚Рё' : 'РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ'
+  hideAuthError()
+}
+
+// в•ђв•ђ PROFILE в•ђв•ђ
+document.getElementById('profileBtn').onclick = () => {
+  selectedAvatar = userAvatar || 'рџљЂ'
+  document.getElementById('profEmail').textContent = userEmail
+  document.getElementById('profNick').value = userNick || ''
+  setAvatarPreview(selectedAvatar, selectedAvatar.startsWith('data:'))
+  document.getElementById('profGrid').style.display = 'none'
+  document.getElementById('profModal').classList.add('show')
+}
+document.getElementById('profBack').onclick = () => document.getElementById('profModal').classList.remove('show')
+document.getElementById('profSave').onclick = async () => {
+  const nick = document.getElementById('profNick').value.trim().slice(0, 15)
+  const res = await apiCall('/api/profile', {nickname: nick, avatar: selectedAvatar}, 'PUT')
+  if (res.ok) {
+    userNick = res.nickname; userAvatar = res.avatar
+    localStorage.setItem(AKEY+'Nick', userNick); localStorage.setItem(AKEY+'Avatar', userAvatar)
+    updateUI()
+    const btn = document.getElementById('profSave')
+    const orig = btn.textContent; btn.textContent = 'вњ“ РЎРѕС…СЂР°РЅРµРЅРѕ'; btn.style.opacity = '.6'
+    setTimeout(() => { btn.textContent = orig; btn.style.opacity = '1' }, 1200)
+  }
+}
+document.getElementById('profLogout').onclick = () => {
+  token = ''; userEmail = ''; userNick = ''; userAvatar = ''
+  localStorage.removeItem(AKEY+'Token'); localStorage.removeItem(AKEY+'Email')
+  localStorage.removeItem(AKEY+'Nick'); localStorage.removeItem(AKEY+'Avatar')
+  document.getElementById('profModal').classList.remove('show')
+  updateUI()
+  document.getElementById('authModal').classList.add('show')
+}
+document.getElementById('profPhotoBtn').onclick = () => document.getElementById('profFileInput').click()
+document.getElementById('profFileInput').onchange = function(e) {
+  const file = e.target.files[0]; if (!file) return
+  const reader = new FileReader()
+  reader.onload = function(ev) {
+    const img = new Image()
+    img.onload = function() {
+      const canvas = document.createElement('canvas'); const size = 150
+      canvas.width = size; canvas.height = size
+      const ctx = canvas.getContext('2d'); const s = Math.min(img.width, img.height)
+      ctx.drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, size, size)
+      selectedAvatar = canvas.toDataURL('image/jpeg', 0.7)
+      setAvatarPreview(selectedAvatar, true)
+      document.getElementById('profGrid').style.display = 'none'
+    }; img.src = ev.target.result
+  }; reader.readAsDataURL(file)
+}
+document.getElementById('profEmojiBtn').onclick = () => {
+  const grid = document.getElementById('profGrid'); grid.style.display = 'grid'
+  selectedAvatar = 'рџљЂ'
+  setAvatarPreview('рџљЂ', false)
+  document.getElementById('profAvatar').style.background = getColor(userEmail)
+  grid.innerHTML = AVATARS.map(a => '<div class="prof-em'+(a===selectedAvatar?' active':'')+'" data-a="'+a+'">'+a+'</div>').join('')
+  grid.querySelectorAll('.prof-em').forEach(el => {
+    el.onclick = () => { selectedAvatar = el.dataset.a; setAvatarPreview(el.dataset.a, false); document.getElementById('profAvatar').style.background = getColor(userEmail); document.getElementById('profGrid').style.display = 'none' }
+  })
+}
+
+// в•ђв•ђ INIT в•ђв•ђ
+loadEmails()
+resize()
+initStars()
+updateBestDisplay()
+if (!token) {
+  startGame()
+} else {
+  updateUI()
+  loadProgress()
+  startGame()
+}
+</script>
+</body>
+</html>
