@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>вњ¦ Game Hub</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{width:100%;min-height:100%;background:#03010a;color:#fff;font-family:'Inter',sans-serif;overflow-x:hidden}
+  body{display:flex;flex-direction:column;align-items:center;padding:30px 16px 40px}
+  .bg-glow{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(168,85,247,.08),transparent 70%)}
+  .content{position:relative;z-index:1;max-width:400px;width:100%}
+  .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;min-height:44px}
+  .profile-btn{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 10px 4px 4px;border-radius:30px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);transition:all .15s;text-decoration:none;color:inherit}
+  .profile-btn:active{transform:scale(.95);background:rgba(255,255,255,.06)}
+  .profile-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  .profile-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .login-btn-top{font-size:12px;font-weight:700;padding:8px 16px;border-radius:30px;border:1px solid rgba(168,85,247,.2);background:rgba(168,85,247,.1);color:#a855f7;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .login-btn-top:active{transform:scale(.95)}
+  .header{text-align:center;margin-bottom:24px}
+  .logo{font-size:42px;margin-bottom:4px}
+  .title{font-size:26px;font-weight:900;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:12px;color:rgba(255,255,255,.25);font-weight:500;margin-top:2px;letter-spacing:.3px}
+  .category{display:flex;flex-direction:column;gap:12px}
+  a{text-decoration:none;color:inherit}
+  .cat-card{
+    display:flex;align-items:center;gap:14px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+    border-radius:16px;padding:14px;cursor:pointer;
+    transition:all .2s
+  }
+  .cat-card:active{transform:scale(.97);background:rgba(255,255,255,.08)}
+  .cat-icon{width:52px;height:52px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .cat-info{flex:1;min-width:0}
+  .cat-title{font-size:15px;font-weight:700;margin-bottom:2px}
+  .cat-count{font-size:11px;color:rgba(255,255,255,.3);font-weight:500}
+  .cat-arrow{font-size:18px;color:rgba(255,255,255,.15);flex-shrink:0}
+  .footer{text-align:center;margin-top:30px;font-size:10px;color:rgba(255,255,255,.1)}
+  .auth-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .auth-modal.show{display:flex}
+  .auth-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .auth-title{font-size:18px;font-weight:900;text-align:center;margin-bottom:16px;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .auth-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:500;outline:none;margin-bottom:10px;font-family:'Inter',sans-serif;transition:border-color .2s}
+  .auth-input:focus{border-color:rgba(168,85,247,.3)}
+  .auth-input::placeholder{color:rgba(255,255,255,.15)}
+  .auth-submit{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .auth-submit:active{transform:scale(.97)}
+  .auth-switch{text-align:center;font-size:11px;color:rgba(255,255,255,.2);cursor:pointer}
+  .auth-switch:hover{color:rgba(255,255,255,.4)}
+  .auth-error{font-size:11px;color:#ef4444;text-align:center;margin-bottom:8px;display:none}
+  .prof-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .prof-modal.show{display:flex}
+  .prof-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .prof-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700}
+  .prof-email{text-align:center;font-size:11px;color:rgba(255,255,255,.15);margin-bottom:16px}
+  .prof-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:500;outline:none;margin-bottom:14px;font-family:'Inter',sans-serif;transition:border-color .2s;text-align:center}
+  .prof-input:focus{border-color:rgba(168,85,247,.3)}
+  .prof-input::placeholder{color:rgba(255,255,255,.15)}
+  .prof-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+  .prof-em{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .1s}
+  .prof-em:active{transform:scale(.85);background:rgba(168,85,247,.2)}
+  .prof-em.active{border-color:#a855f7;background:rgba(168,85,247,.15)}
+  .prof-em-sm{width:auto!important;aspect-ratio:auto!important;padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600}
+  .prof-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;overflow:hidden;background-size:cover;background-position:center}
+  .prof-save{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .prof-save:active{transform:scale(.97)}
+  .prof-logout{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(239,68,68,.15);background:rgba(239,68,68,.06);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .prof-logout:active{transform:scale(.97)}
+  .prof-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:rgba(255,255,255,.3);transition:all .15s}
+  .prof-back:active{background:rgba(255,255,255,.06);transform:scale(.9)}
+  .donate-btn{display:inline-flex;align-items:center;gap:6px;margin-top:20px;padding:10px 20px;border-radius:30px;border:1px solid rgba(255,200,50,.15);background:rgba(255,200,50,.06);color:rgba(255,200,50,.7);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .donate-btn:active{transform:scale(.95);background:rgba(255,200,50,.1)}
+  .donate-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .donate-modal.show{display:flex}
+  .donate-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw;text-align:center}
+  .donate-heart{font-size:32px;margin-bottom:6px}
+  .donate-title{font-size:16px;font-weight:700;margin-bottom:4px;color:rgba(255,255,255,.7)}
+  .donate-sub{font-size:11px;color:rgba(255,255,255,.2);margin-bottom:20px}
+  .donate-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:16px}
+  .donate-card-num{font-size:20px;font-weight:900;letter-spacing:2px;background:linear-gradient(135deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+  .donate-card-name{font-size:12px;color:rgba(255,255,255,.3)}
+  .donate-copy{display:inline-flex;align-items:center;gap:6px;padding:10px 24px;border-radius:12px;border:none;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#1a0a00;font-size:13px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .donate-copy:active{transform:scale(.97)}
+  .donate-close{display:block;margin:12px auto 0;padding:6px 16px;border-radius:10px;border:none;background:rgba(255,255,255,.04);color:rgba(255,255,255,.3);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .donate-close:active{transform:scale(.95)}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="auth-modal" id="authModal">
+  <div class="auth-box">
+    <div class="auth-title" id="authTitle">вњ¦ Р’С…РѕРґ</div>
+    <div class="auth-error" id="authError"></div>
+    <input class="auth-input" id="authEmail" type="email" placeholder="Email" autocomplete="off" list="knownEmails">
+    <datalist id="knownEmails"></datalist>
+    <button class="auth-submit" id="authSubmit">Р’РѕР№С‚Рё</button>
+    <div class="auth-switch" id="authSwitch">РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</div>
+  </div>
+</div>
+<div class="prof-modal" id="profModal">
+  <div class="prof-box">
+    <div style="display:flex;align-items:center;margin-bottom:12px">
+      <div class="prof-back" id="profBack">в†ђ</div>
+      <div style="flex:1;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.25)">РџСЂРѕС„РёР»СЊ</div>
+      <div style="width:30px"></div>
+    </div>
+    <div class="prof-avatar" id="profAvatar">рџЋ</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:14px;flex-wrap:wrap">
+      <button class="prof-em prof-em-sm" id="profPhotoBtn">рџ–ј С„РѕС‚Рѕ</button>
+      <button class="prof-em prof-em-sm" id="profEmojiBtn">рџЂ СЌРјРѕРґР·Рё</button>
+    </div>
+    <input type="file" id="profFileInput" accept="image/*" style="display:none">
+    <div class="prof-email" id="profEmail">email@mail.com</div>
+    <input class="prof-input" id="profNick" type="text" placeholder="РќРёРєРЅРµР№Рј" maxlength="15">
+    <div class="prof-grid" id="profGrid" style="display:none"></div>
+    <button class="prof-save" id="profSave">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
+    <button class="prof-logout" id="profLogout">Р’С‹Р№С‚Рё</button>
+  </div>
+</div>
+<div class="content">
+  <div class="top-row">
+    <div></div>
+    <div class="profile-btn" id="profileBtn" style="display:none">
+      <div class="profile-circle" id="profCircle">рџЋ</div>
+      <span class="profile-name" id="profName">РќРёРє</span>
+    </div>
+    <button class="login-btn-top" id="loginBtnTop">Р’РѕР№С‚Рё</button>
+  </div>
+  <div class="header">
+    <div class="logo">рџЋ®</div>
+    <div class="title">Game Hub</div>
+    <div class="sub">РєР°С‚РµРіРѕСЂРёРё РёРіСЂ</div>
+  </div>
+  <div class="category">
+    <a class="cat-card" href="/category-cosmos.html" id="catCosmos">
+      <div class="cat-icon" style="background:linear-gradient(135deg,#1e1b4b,#312e81)">рџљЂ</div>
+      <div class="cat-info">
+        <div class="cat-title">РљРѕСЃРјРѕСЃ</div>
+        <div class="cat-count">4 РёРіСЂС‹</div>
+      </div>
+      <div class="cat-arrow">в†’</div>
+    </a>
+  </div>
+  <div class="footer">РµС‰С‘ РєР°С‚РµРіРѕСЂРёРё СЃРєРѕСЂРѕ вњ¦</div>
+  <div style="text-align:center"><div class="donate-btn" id="donateBtn">вќ¤пёЏ РџРѕРґРґРµСЂР¶Р°С‚СЊ</div></div>
+</div>
+
+<div class="donate-modal" id="donateModal">
+  <div class="donate-box">
+    <div class="donate-heart">вќ¤пёЏ</div>
+    <div class="donate-title">РџРѕРґРґРµСЂР¶Р°С‚СЊ РїСЂРѕРµРєС‚</div>
+    <div class="donate-sub">СЃРїР°СЃРёР±Рѕ Р·Р° РґРѕРЅР°С‚ рџ’«</div>
+    <div class="donate-card"><div class="donate-card-num">4400 4302 0342 0077</div><div class="donate-card-name">Spike_God</div></div>
+    <button class="donate-copy" id="donateCopy">рџ“‹ РљРѕРїРёСЂРѕРІР°С‚СЊ</button>
+    <button class="donate-close" id="donateClose">Р—Р°РєСЂС‹С‚СЊ</button>
+  </div>
+</div>
+<script>
+  const API = window.location.origin
+  let token = localStorage.getItem('starMergeToken') || ''
+  let userEmail = localStorage.getItem('starMergeEmail') || ''
+  let userNick = localStorage.getItem('starMergeNick') || ''
+  let userAvatar = localStorage.getItem('starMergeAvatar') || ''
+
+  const authModal = document.getElementById('authModal')
+  const authTitle = document.getElementById('authTitle')
+  const authEmail = document.getElementById('authEmail')
+  const authSubmit = document.getElementById('authSubmit')
+  const authSwitch = document.getElementById('authSwitch')
+  const authError = document.getElementById('authError')
+  const profModal = document.getElementById('profModal')
+  const profAvatar = document.getElementById('profAvatar')
+  const profEmail = document.getElementById('profEmail')
+  const profNick = document.getElementById('profNick')
+  const profGrid = document.getElementById('profGrid')
+  const profSave = document.getElementById('profSave')
+  const profLogout = document.getElementById('profLogout')
+  const profileBtn = document.getElementById('profileBtn')
+  const profCircle = document.getElementById('profCircle')
+  const profName = document.getElementById('profName')
+  const profBack = document.getElementById('profBack')
+  const profPhotoBtn = document.getElementById('profPhotoBtn')
+  const profEmojiBtn = document.getElementById('profEmojiBtn')
+  const profFileInput = document.getElementById('profFileInput')
+  const loginBtnTop = document.getElementById('loginBtnTop')
+  const catCosmos = document.getElementById('catCosmos')
+  let isRegister = false
+  let selectedAvatar = ''
+
+  const AVATARS = ['рџЋ','рџљЂ','рџЊџ','рџ‘ѕ','рџЋ®','рџ”Ґ','рџ’Ћ','рџЊ€','рџЄђ','рџ‘ЁвЂЌрџљЂ','рџ›ё','рџЊЊ','вљЎ','рџЋЇ','рџ’«','рџђ‰','рџ¦Љ','рџђ±','вќ¤пёЏ','рџ’њ','в­ђ','рџЊ™','рџ¦„','рџЌЂ']
+  const COLORS = ['#7c3aed','#2563eb','#059669','#d97706','#dc2626','#db2777','#4f46e5','#0891b2']
+
+  function saveEmail(email) {
+    let list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+    if (!list.includes(email)) { list.push(email); localStorage.setItem('knownEmails', JSON.stringify(list)) }
+  }
+  function loadEmails() {
+    const list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+    const dl = document.getElementById('knownEmails')
+    dl.innerHTML = list.map(e => '<option value="' + e.replace(/"/g,'&quot;') + '">').join('')
+  }
+  function showAuthError(msg) { authError.textContent = msg; authError.style.display = 'block' }
+  function hideAuthError() { authError.style.display = 'none' }
+  async function apiCall(path, data, method) {
+    const headers = {'Content-Type':'application/json'}
+    if (token) headers['Authorization'] = 'Bearer ' + token
+    try {
+      const r = await fetch(API + path, {method: method || 'POST', headers, body: data ? JSON.stringify(data) : undefined})
+      return await r.json()
+    } catch(e) { return {error:'РћС€РёР±РєР° СЃРѕРµРґРёРЅРµРЅРёСЏ'} }
+  }
+
+  function getColor(email) {
+    let h = 0
+    for (let i = 0; i < email.length; i++) h = ((h << 5) - h) + email.charCodeAt(i)
+    return COLORS[Math.abs(h) % COLORS.length]
+  }
+
+  function updateUI() {
+    const authed = token && userEmail
+    profileBtn.style.display = authed ? 'flex' : 'none'
+    loginBtnTop.textContent = authed ? '' : 'Р’РѕР№С‚Рё'
+    loginBtnTop.style.display = authed ? 'none' : ''
+    catCosmos.style.pointerEvents = authed ? '' : 'none'
+    if (authed) {
+      const av = userAvatar || 'рџЋ'
+      const nick = userNick || userEmail.split('@')[0]
+      if (av.startsWith('data:image')) {
+        profCircle.innerHTML = ''
+        profCircle.style.backgroundImage = 'url("' + av + '")'
+        profCircle.style.backgroundSize = 'cover'
+        profCircle.style.fontSize = '0'
+      } else {
+        profCircle.innerHTML = ''
+        profCircle.textContent = av
+        profCircle.style.backgroundImage = ''
+        profCircle.style.background = getColor(userEmail)
+        profCircle.style.fontSize = '15px'
+      }
+      profName.textContent = nick
+    }
+  }
+
+  function setAvatarPreview(src, isImg) {
+    if (isImg) {
+      profAvatar.innerHTML = ''
+      profAvatar.style.backgroundImage = 'url("' + src + '")'
+      profAvatar.style.backgroundSize = 'cover'
+      profAvatar.style.fontSize = '0'
+    } else {
+      profAvatar.innerHTML = ''
+      profAvatar.textContent = src
+      profAvatar.style.backgroundImage = ''
+      profAvatar.style.backgroundSize = ''
+      profAvatar.style.fontSize = '32px'
+    }
+  }
+
+  function openProf() {
+    selectedAvatar = userAvatar || 'рџЋ'
+    profEmail.textContent = userEmail
+    profNick.value = userNick || userEmail.split('@')[0]
+    if (selectedAvatar.startsWith('data:image')) {
+      setAvatarPreview(selectedAvatar, true)
+      profGrid.style.display = 'none'
+    } else {
+      setAvatarPreview(selectedAvatar, false)
+      profAvatar.style.background = getColor(userEmail)
+      profGrid.style.display = 'grid'
+      renderAvatarGrid()
+    }
+    profModal.classList.add('show')
+  }
+
+  function renderAvatarGrid() {
+    profGrid.innerHTML = ''
+    AVATARS.forEach(a => {
+      const div = document.createElement('div')
+      div.className = 'prof-em' + (a === selectedAvatar ? ' active' : '')
+      div.textContent = a
+      div.onclick = () => { selectedAvatar = a; setAvatarPreview(a, false); profAvatar.style.background = getColor(userEmail); renderAvatarGrid(); profGrid.style.display = 'grid' }
+      profGrid.appendChild(div)
+    })
+  }
+
+  profPhotoBtn.onclick = () => profFileInput.click()
+
+  profFileInput.onchange = function(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = function(ev) {
+      const img = new Image()
+      img.onload = function() {
+        const canvas = document.createElement('canvas')
+        const size = 150
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        const s = Math.min(img.width, img.height)
+        const x = (img.width - s) / 2
+        const y = (img.height - s) / 2
+        ctx.drawImage(img, x, y, s, s, 0, 0, size, size)
+        selectedAvatar = canvas.toDataURL('image/jpeg', 0.7)
+        setAvatarPreview(selectedAvatar, true)
+        profGrid.style.display = 'none'
+      }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+
+  profEmojiBtn.onclick = () => {
+    profGrid.style.display = 'grid'
+    selectedAvatar = 'рџЋ'
+    setAvatarPreview('рџЋ', false)
+    profAvatar.style.background = getColor(userEmail)
+    renderAvatarGrid()
+  }
+
+  loginBtnTop.onclick = () => authModal.classList.add('show')
+  profileBtn.onclick = openProf
+
+  profBack.onclick = () => profModal.classList.remove('show')
+
+  profSave.onclick = async () => {
+    const nick = profNick.value.trim().slice(0, 15)
+    const res = await apiCall('/api/profile', {nickname: nick, avatar: selectedAvatar}, 'PUT')
+    if (res.ok) {
+      userNick = res.nickname
+      userAvatar = res.avatar
+      localStorage.setItem('starMergeNick', userNick)
+      localStorage.setItem('starMergeAvatar', userAvatar)
+      updateUI()
+      const orig = profSave.textContent
+      profSave.textContent = 'вњ“ РЎРѕС…СЂР°РЅРµРЅРѕ'
+      profSave.style.opacity = '.6'
+      setTimeout(() => { profSave.textContent = orig; profSave.style.opacity = '1' }, 1200)
+    }
+  }
+
+  profLogout.onclick = () => {
+    token = ''; userEmail = ''; userNick = ''; userAvatar = ''
+    localStorage.removeItem('starMergeToken')
+    localStorage.removeItem('starMergeEmail')
+    localStorage.removeItem('starMergeNick')
+    localStorage.removeItem('starMergeAvatar')
+    profModal.classList.remove('show')
+    updateUI()
+    authModal.classList.add('show')
+  }
+
+  authSubmit.onclick = async () => {
+    hideAuthError()
+    const email = authEmail.value.trim().toLowerCase()
+    if (!email) { showAuthError('Р’РІРµРґРёС‚Рµ email'); return }
+    const ep = isRegister ? '/api/register' : '/api/login'
+    const res = await apiCall(ep, {email})
+    if (res.error) { showAuthError(res.error); return }
+    token = res.token
+    userEmail = res.email
+    userNick = res.nickname || ''
+    userAvatar = res.avatar || ''
+    localStorage.setItem('starMergeToken', token)
+    localStorage.setItem('starMergeEmail', userEmail)
+    localStorage.setItem('starMergeNick', userNick)
+    localStorage.setItem('starMergeAvatar', userAvatar)
+    saveEmail(userEmail)
+    authModal.classList.remove('show')
+    authEmail.value = ''
+    updateUI()
+  }
+
+  authSwitch.onclick = () => {
+    isRegister = !isRegister
+    authTitle.textContent = isRegister ? 'вњ¦ Р РµРіРёСЃС‚СЂР°С†РёСЏ' : 'вњ¦ Р’С…РѕРґ'
+    authSubmit.textContent = isRegister ? 'Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ' : 'Р’РѕР№С‚Рё'
+    authSwitch.textContent = isRegister ? 'РЈР¶Рµ РµСЃС‚СЊ Р°РєРєР°СѓРЅС‚? Р’РѕР№С‚Рё' : 'РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ'
+    hideAuthError()
+  }
+
+  // в•ђв•ђ DONATE в•ђв•ђ
+  const donateBtn = document.getElementById('donateBtn')
+  const donateModal = document.getElementById('donateModal')
+  const donateCopy = document.getElementById('donateCopy')
+  const donateClose = document.getElementById('donateClose')
+  donateBtn.onclick = () => {
+    donateModal.classList.add('show')
+  }
+  donateClose.onclick = () => donateModal.classList.remove('show')
+  donateCopy.onclick = () => {
+    navigator.clipboard.writeText('4400430203420077').then(() => {
+      const orig = donateCopy.textContent
+      donateCopy.textContent = 'вњ“ РЎРєРѕРїРёСЂРѕРІР°РЅРѕ'
+      setTimeout(() => { donateCopy.textContent = orig }, 1500)
+    }).catch(() => {
+      const ta = document.createElement('textarea')
+      ta.value = '4400430203420077'; ta.style.position = 'fixed'; ta.style.opacity = '0'
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
+      const orig = donateCopy.textContent
+      donateCopy.textContent = 'вњ“ РЎРєРѕРїРёСЂРѕРІР°РЅРѕ'
+      setTimeout(() => { donateCopy.textContent = orig }, 1500)
+    })
+  }
+
+  loadEmails()
+  updateUI()
+  if (!token) authModal.classList.add('show')
+  if (window.Telegram && Telegram.WebApp) Telegram.WebApp.expand()
+</script>
+</body>
+</html>
