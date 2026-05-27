@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>вњ¦ Star Merge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#03010a;color:#fff;font-family:'Inter',sans-serif}
+  #app{width:100%;max-width:420px;height:100vh;margin:0 auto;display:flex;flex-direction:column;align-items:center;padding:16px;position:relative;overflow:hidden}
+  #space-bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+  .star{position:absolute;animation:var(--a,twinkle) var(--d,3s) ease-in-out infinite alternate}
+  .star-dot{width:var(--s,2px);height:var(--s,2px);border-radius:50%;background:var(--c,#fff)}
+  .star-cross{width:var(--s,6px);height:var(--s,6px)}
+  .star-cross::before,.star-cross::after{content:'';position:absolute;background:var(--c,#fff);border-radius:1px}
+  .star-cross::before{width:100%;height:2px;top:50%;left:0;transform:translateY(-50%)}
+  .star-cross::after{width:2px;height:100%;top:0;left:50%;transform:translateX(-50%)}
+  .star-diamond{width:var(--s,6px);height:var(--s,6px);background:var(--c,#fff);transform:rotate(45deg);border-radius:1px}
+  .star-glow{width:var(--s,10px);height:var(--s,10px);border-radius:50%;background:var(--c,#fff);box-shadow:0 0 var(--g,12px) var(--c,#fff),0 0 var(--g2,24px) var(--c2,rgba(168,85,247,.4))}
+  .star-pin{width:var(--s,4px);height:var(--s,4px);border-radius:50%;background:var(--c,#fff)}
+  .star-pin::after{content:'';position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,var(--c2,rgba(255,255,255,.3)),transparent 70%)}
+  @keyframes twinkle{0%{opacity:.15;transform:scale(.8)}100%{opacity:1;transform:scale(1.3)}}
+  @keyframes pulse{0%{opacity:.3;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}100%{opacity:.3;transform:scale(.7)}}
+  @keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,-10px) scale(1.05)}}
+  @keyframes shoot{0%{transform:translateX(-100px) translateY(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(calc(100vw + 100px)) translateY(-50px);opacity:0}}
+  .shooting-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff,0 0 12px rgba(168,85,247,.3);animation:shoot var(--sd,2s) linear forwards;z-index:1}
+  .shooting-star::after{content:'';position:absolute;top:50%;right:100%;width:60px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6));transform:translateY(-50%)}
+  .bg-glow{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(168,85,247,.06),transparent 70%);transition:all 1s}
+  .content{position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:center;height:100%}
+  .header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:4px 0 8px}
+  .logo{font-size:20px;font-weight:900;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Orbitron',sans-serif;letter-spacing:-.5px}
+  .score-box{text-align:right}
+  .score-label{font-size:9px;color:rgba(255,255,255,.25);font-weight:600;letter-spacing:.5px}
+  .score{font-size:22px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .best{font-size:10px;color:rgba(255,255,255,.2);font-weight:600}
+  .grid-wrap{position:relative;width:100%;aspect-ratio:1;background:rgba(255,255,255,.03);border-radius:16px;padding:8px;border:1px solid rgba(255,255,255,.05);max-width:400px;margin:4px 0}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;height:100%}
+  .cell{background:rgba(255,255,255,.03);border-radius:10px;aspect-ratio:1;position:relative}
+  .tile{position:absolute;inset:0;border-radius:var(--br,10px);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;transition:all .12s ease;animation:appear .15s ease-out;z-index:2;border:var(--bdr,none)}
+  .tile .emoji{font-size:clamp(20px,5vw,34px);line-height:1}
+  .tile .name{font-size:clamp(6px,1.5vw,10px);font-weight:700;margin-top:1px;opacity:.9;letter-spacing:-.2px}
+  .tile .val{font-size:clamp(8px,2vw,13px);font-weight:900;display:none}
+  .tile-shape-dot{border-radius:50%!important}
+  .tile-shape-soft{border-radius:14px!important}
+  .tile-shape-norm{border-radius:10px!important}
+  .tile-shape-sharp{border-radius:5px!important}
+  .tile-shape-dia{border-radius:50%!important;transform:rotate(45deg) scale(.8)}
+  .tile-shape-dia .emoji,.tile-shape-dia .name{transform:rotate(-45deg)}
+  @keyframes appear{0%{transform:scale(0);opacity:0}50%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  @keyframes merge{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .tile.merging{animation:merge .2s ease-out;z-index:3}
+  .tile-charge{animation:charge .8s ease-in-out infinite alternate}
+  @keyframes charge{0%{box-shadow:0 0 var(--g,10px) var(--c2,#fff)}100%{box-shadow:0 0 var(--g2,25px) var(--c2,#fff),0 0 var(--g3,40px) var(--c3,rgba(168,85,247,.3))}}
+  .controls{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+  .ctrl-btn{padding:10px 22px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .ctrl-btn:active{transform:scale(.92);background:rgba(255,255,255,.08)}
+  .ctrl-btn.new-btn{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.2);color:#a855f7}
+  .game-over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(3,1,10,.8);border-radius:16px;z-index:10;backdrop-filter:blur(8px)}
+  .game-over.show{display:flex}
+  .go-title{font-size:32px;margin-bottom:4px}
+  .go-score{font-size:20px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:14px}
+  .go-btn{padding:12px 36px;border-radius:14px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:16px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .go-btn:active{transform:scale(.92)}
+  .hint{font-size:10px;color:rgba(255,255,255,.15);margin-top:8px;text-align:center}
+  .swipe-hint{font-size:11px;color:rgba(255,255,255,.1);margin-top:6px;letter-spacing:.3px}
+  .top-row{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:4px;min-height:36px}
+  .profile-btn{display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 8px 3px 3px;border-radius:30px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);transition:all .15s;text-decoration:none;color:inherit}
+  .profile-btn:active{transform:scale(.95);background:rgba(255,255,255,.06)}
+  .profile-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .profile-name{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .auth-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .auth-modal.show{display:flex}
+  .auth-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .auth-title{font-size:18px;font-weight:900;text-align:center;margin-bottom:16px;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .auth-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:500;outline:none;margin-bottom:10px;font-family:'Inter',sans-serif;transition:border-color .2s}
+  .auth-input:focus{border-color:rgba(168,85,247,.3)}
+  .auth-input::placeholder{color:rgba(255,255,255,.15)}
+  .auth-submit{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .auth-submit:active{transform:scale(.97)}
+  .auth-switch{text-align:center;font-size:11px;color:rgba(255,255,255,.2);cursor:pointer}
+  .auth-switch:hover{color:rgba(255,255,255,.4)}
+  .auth-error{font-size:11px;color:#ef4444;text-align:center;margin-bottom:8px;display:none}
+  .auth-ok{text-align:center;font-size:13px;color:rgba(255,255,255,.4);padding:10px 0}
+  .prof-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .prof-modal.show{display:flex}
+  .prof-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .prof-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700}
+  .prof-email{text-align:center;font-size:11px;color:rgba(255,255,255,.15);margin-bottom:16px}
+  .prof-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:500;outline:none;margin-bottom:14px;font-family:'Inter',sans-serif;transition:border-color .2s;text-align:center}
+  .prof-input:focus{border-color:rgba(168,85,247,.3)}
+  .prof-input::placeholder{color:rgba(255,255,255,.15)}
+  .prof-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+  .prof-em{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .1s}
+  .prof-em:active{transform:scale(.85);background:rgba(168,85,247,.2)}
+  .prof-em.active{border-color:#a855f7;background:rgba(168,85,247,.15)}
+  .prof-em-sm{width:auto!important;aspect-ratio:auto!important;padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600}
+  .prof-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;overflow:hidden;background-size:cover;background-position:center}
+  .prof-save{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .prof-save:active{transform:scale(.97)}
+  .prof-logout{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(239,68,68,.15);background:rgba(239,68,68,.06);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .prof-logout:active{transform:scale(.97)}
+  .game-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:rgba(255,255,255,.5);transition:all .15s;background:rgba(255,255,255,.06);flex-shrink:0}
+  .game-back:active{background:rgba(255,255,255,.1);transform:scale(.9)}
+  .prof-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:rgba(255,255,255,.3);transition:all .15s}
+  .prof-back:active{background:rgba(255,255,255,.06);transform:scale(.9)}
+  .save-btn{position:absolute;top:8px;right:8px;z-index:5;padding:3px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);color:rgba(255,255,255,.15);font-size:9px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+  .save-btn:active{background:rgba(255,255,255,.06)}
+</style>
+</head>
+<body>
+<div id="space-bg"></div>
+<div class="bg-glow" id="bgGlow"></div>
+<div class="auth-modal" id="authModal">
+  <div class="auth-box">
+    <div class="auth-title" id="authTitle">вњ¦ Р’С…РѕРґ</div>
+    <div class="auth-error" id="authError"></div>
+    <input class="auth-input" id="authEmail" type="email" placeholder="Email" autocomplete="off" list="knownEmails">
+    <datalist id="knownEmails"></datalist>
+    <button class="auth-submit" id="authSubmit">Р’РѕР№С‚Рё</button>
+    <div class="auth-switch" id="authSwitch">РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</div>
+  </div>
+</div>
+<div class="prof-modal" id="profModal">
+  <div class="prof-box">
+    <div style="display:flex;align-items:center;margin-bottom:12px">
+      <div class="prof-back" id="profBack">в†ђ</div>
+      <div style="flex:1;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.25)">РџСЂРѕС„РёР»СЊ</div>
+      <div style="width:30px"></div>
+    </div>
+    <div class="prof-avatar" id="profAvatar">рџЋ</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:14px;flex-wrap:wrap">
+      <button class="prof-em prof-em-sm" id="profPhotoBtn">рџ–ј С„РѕС‚Рѕ</button>
+      <button class="prof-em prof-em-sm" id="profEmojiBtn">рџЂ СЌРјРѕРґР·Рё</button>
+    </div>
+    <input type="file" id="profFileInput" accept="image/*" style="display:none">
+    <div class="prof-email" id="profEmail">email@mail.com</div>
+    <input class="prof-input" id="profNick" type="text" placeholder="РќРёРєРЅРµР№Рј" maxlength="15">
+    <div class="prof-grid" id="profGrid" style="display:none"></div>
+    <button class="prof-save" id="profSave">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
+    <button class="prof-logout" id="profLogout">Р’С‹Р№С‚Рё</button>
+  </div>
+</div>
+<div id="app">
+  <div class="content">
+    <div class="top-row">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="game-back" onclick="history.back()">в†ђ</div>
+        <div class="profile-btn" id="profileBtn" style="display:none">
+          <div class="profile-circle" id="profCircle">рџЋ</div>
+          <span class="profile-name" id="profName">РќРёРє</span>
+        </div>
+      </div>
+      <div></div>
+    </div>
+    <div class="header">
+      <div class="logo">вњ¦ MERGE</div>
+      <div class="score-box">
+        <div class="score-label">РЎР§РЃРў</div>
+        <div class="score" id="score">0</div>
+        <div class="best" id="best">СЂРµРєРѕСЂРґ: 0</div>
+      </div>
+    </div>
+    <div class="grid-wrap" style="position:relative">
+      <span class="save-btn" id="saveBtn" style="display:none">рџ’ѕ</span>
+      <div class="grid" id="grid"></div>
+      <div class="game-over" id="gameOver">
+        <div class="go-title">рџ’«</div>
+        <div class="go-score" id="finalScore">0 РѕС‡РєРѕРІ</div>
+        <button class="go-btn" onclick="newGame()">рџ”„ Р—Р°РЅРѕРІРѕ</button>
+      </div>
+    </div>
+      <div class="swipe-hint">в†ђ СЃРІР°Р№Рї РёР»Рё СЃС‚СЂРµР»РєРё в†’</div>
+    <div class="controls">
+      <button class="ctrl-btn" onclick="move('up')">в¬†</button>
+      <button class="ctrl-btn" onclick="move('left')">в¬…</button>
+      <button class="ctrl-btn" onclick="move('down')">в¬‡</button>
+      <button class="ctrl-btn" onclick="move('right')">вћЎ</button>
+      <button class="ctrl-btn new-btn" onclick="newGame()">вњ¦ РќРѕРІР°СЏ</button>
+    </div>
+    <div class="hint">РѕР±СЉРµРґРёРЅСЏР№ Р·РІС‘Р·РґС‹ С‡С‚РѕР±С‹ СЃРѕР·РґР°С‚СЊ СЃРІРµСЂС…РЅРѕРІСѓСЋ!</div>
+  </div>
+</div>
+<script>
+const TILES = {
+  2:    {emoji:'в­ђ', name:'РџС‹Р»СЊ',     color:'#1e1b4b', text:'#a78bfa', shape:'dot',     glow:'8px', border:'1px solid rgba(167,139,250,.15)'},
+  4:    {emoji:'рџЊџ', name:'Р—РІРµР·РґР°',   color:'#312e81', text:'#818cf8', shape:'dot',     glow:'10px', border:'1px solid rgba(129,140,248,.2)'},
+  8:    {emoji:'вњЁ', name:'Р“РёРіР°РЅС‚',   color:'#3730a3', text:'#6366f1', shape:'soft',    glow:'12px', border:'1px solid rgba(99,102,241,.25)'},
+  16:   {emoji:'рџ”Ґ', name:'РЎРІРµСЂС…РіРёРі', color:'#7c2d12', text:'#fb923c', shape:'soft',    glow:'14px', border:'1px solid rgba(251,146,60,.3)'},
+  32:   {emoji:'рџ’«', name:'РЎРІРµСЂС…РЅ.',  color:'#9a3412', text:'#fbbf24', shape:'sharp',   glow:'16px', border:'none'},
+  64:   {emoji:'рџ•іпёЏ', name:'Р”С‹СЂР°',    color:'#1c1917', text:'#a8a29e', shape:'sharp',   glow:'14px', border:'1px solid rgba(168,162,158,.2)'},
+  128:  {emoji:'рџЊЊ', name:'Р“Р°Р»Р°РєС‚РёРєР°',color:'#1e1b4b', text:'#c4b5fd', shape:'norm',    glow:'18px', border:'1px solid rgba(196,181,253,.25)'},
+  256:  {emoji:'рџЊ ', name:'РўСѓРјР°РЅРЅ.',  color:'#4c1d95', text:'#a855f7', shape:'dia',     glow:'20px', border:'1px solid rgba(168,85,247,.3)'},
+  512:  {emoji:'рџЄђ', name:'РџР»Р°РЅРµС‚Р°',  color:'#14532d', text:'#4ade80', shape:'norm',    glow:'22px', border:'1px solid rgba(74,222,128,.3)'},
+  1024: {emoji:'рџЊЌ', name:'Р—РµРјР»СЏ',    color:'#075985', text:'#38bdf8', shape:'soft',    glow:'24px', border:'1px solid rgba(56,189,248,.35)'},
+  2048: {emoji:'вЂпёЏ', name:'РЎРѕР»РЅС†Рµ',  color:'#78350f', text:'#fbbf24', shape:'dot',     glow:'28px', border:'none'},
+  4096: {emoji:'рџЊЂ', name:'РљРІР°Р·Р°СЂ',   color:'#3b0764', text:'#e879f9', shape:'sharp',   glow:'30px', border:'none'},
+  8192: {emoji:'рџ’Ґ', name:'Р‘Р°СЂСЃС‚РµСЂ',  color:'#450a0a', text:'#fca5a5', shape:'sharp',   glow:'35px', border:'none', charge:true},
+}
+
+let board = Array(16).fill(0)
+let score = 0
+let best = parseInt(localStorage.getItem('starMergeBest') || '0')
+let gameOver = false
+
+const grid = document.getElementById('grid')
+const scoreEl = document.getElementById('score')
+const bestEl = document.getElementById('best')
+const gameOverEl = document.getElementById('gameOver')
+const finalEl = document.getElementById('finalScore')
+
+function randCell() {
+  const idx = []
+  board.forEach((v,i) => { if (!v) idx.push(i) })
+  if (!idx.length) return false
+  const i = idx[Math.floor(Math.random() * idx.length)]
+  board[i] = Math.random() < .9 ? 2 : 4
+  return true
+}
+
+function draw() {
+  grid.innerHTML = ''
+  board.forEach((v,i) => {
+    const cell = document.createElement('div')
+    cell.className = 'cell'
+    if (v) {
+      const t = TILES[v] || TILES[2]
+      const tile = document.createElement('div')
+      const cls = ['tile']
+      if (t.shape) cls.push('tile-shape-' + t.shape)
+      if (t.charge) cls.push('tile-charge')
+      tile.className = cls.join(' ')
+      tile.style.setProperty('--br', t.shape === 'dot' ? '50%' : t.shape === 'soft' ? '14px' : t.shape === 'sharp' ? '5px' : '10px')
+      tile.style.background = t.color
+      tile.style.color = t.text
+      tile.style.boxShadow = `0 0 ${t.glow || '20px'} ${t.color}66`
+      tile.style.setProperty('--g', t.glow || '10px')
+      tile.style.setProperty('--g2', `calc(${t.glow || '20px'} * 2)`)
+      tile.style.setProperty('--g3', `calc(${t.glow || '20px'} * 3)`)
+      tile.style.setProperty('--c2', t.color)
+      tile.style.setProperty('--c3', t.color + '44')
+      if (t.border) tile.style.border = t.border
+      tile.innerHTML = `<span class="emoji">${t.emoji}</span><span class="name">${t.name}</span><span class="val">${v}</span>`
+      cell.appendChild(tile)
+    }
+    grid.appendChild(cell)
+  })
+  scoreEl.textContent = score
+  bestEl.textContent = `СЂРµРєРѕСЂРґ: ${best}`
+}
+
+function slideRow(row) {
+  let arr = row.filter(v => v)
+  let merged = []
+  let pts = 0
+  for (let i = 0; i < arr.length; i++) {
+    if (i + 1 < arr.length && arr[i] === arr[i+1]) {
+      merged.push(arr[i] * 2)
+      pts += arr[i] * 2
+      i++
+    } else {
+      merged.push(arr[i])
+    }
+  }
+  while (merged.length < 4) merged.push(0)
+  return { row: merged, points: pts }
+}
+
+function getCol(grid, c) { return [grid[c], grid[c+4], grid[c+8], grid[c+12]] }
+function setCol(grid, c, vals) { grid[c] = vals[0]; grid[c+4] = vals[1]; grid[c+8] = vals[2]; grid[c+12] = vals[3] }
+
+function move(dir) {
+  if (gameOver) return
+  const old = [...board]
+  let pts = 0
+  if (dir === 'left') {
+    for (let r = 0; r < 4; r++) {
+      const s = slideRow(board.slice(r*4, r*4+4))
+      for (let c = 0; c < 4; c++) board[r*4+c] = s.row[c]
+      pts += s.points
+    }
+  } else if (dir === 'right') {
+    for (let r = 0; r < 4; r++) {
+      const s = slideRow(board.slice(r*4, r*4+4).reverse())
+      for (let c = 0; c < 4; c++) board[r*4+3-c] = s.row[c]
+      pts += s.points
+    }
+  } else if (dir === 'up') {
+    for (let c = 0; c < 4; c++) {
+      const s = slideRow(getCol(board, c))
+      setCol(board, c, s.row)
+      pts += s.points
+    }
+  } else if (dir === 'down') {
+    for (let c = 0; c < 4; c++) {
+      const s = slideRow(getCol(board, c).reverse())
+      setCol(board, c, s.row.reverse())
+      pts += s.points
+    }
+  }
+  if (board.join(',') === old.join(',')) {
+    if (!canMove()) { endGame(); return }
+    const ok = randCell()
+    draw()
+    if (!ok) endGame()
+    return
+  }
+  score += pts
+  randCell()
+  draw()
+  if (pts > 0) {
+    document.getElementById('bgGlow').style.background = `radial-gradient(circle,rgba(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},.06),transparent 70%)`
+    saveProgress()
+  }
+  if (!canMove()) endGame()
+}
+
+function canMove() {
+  for (let i = 0; i < 16; i++) {
+    if (!board[i]) return true
+    if (i % 4 < 3 && board[i] === board[i+1]) return true
+    if (i < 12 && board[i] === board[i+4]) return true
+  }
+  return false
+}
+
+function endGame() {
+  gameOver = true
+  if (score > best) { best = score; localStorage.setItem('starMergeBest', String(best)) }
+  finalEl.textContent = `${score} РѕС‡РєРѕРІ`
+  gameOverEl.classList.add('show')
+}
+
+function newGame() {
+  board = Array(16).fill(0)
+  score = 0
+  gameOver = false
+  gameOverEl.classList.remove('show')
+  randCell(); randCell()
+  draw()
+}
+
+// в•ђв•ђ AUTH + PROFILE в•ђв•ђ
+const API = window.location.origin
+let token = localStorage.getItem('starMergeToken') || ''
+let userEmail = localStorage.getItem('starMergeEmail') || ''
+let userNick = localStorage.getItem('starMergeNick') || ''
+let userAvatar = localStorage.getItem('starMergeAvatar') || ''
+
+const authModal = document.getElementById('authModal')
+const authTitle = document.getElementById('authTitle')
+const authEmail = document.getElementById('authEmail')
+const authSubmit = document.getElementById('authSubmit')
+const authSwitch = document.getElementById('authSwitch')
+const authError = document.getElementById('authError')
+const profModal = document.getElementById('profModal')
+const profAvatar = document.getElementById('profAvatar')
+const profEmail = document.getElementById('profEmail')
+const profNick = document.getElementById('profNick')
+const profGrid = document.getElementById('profGrid')
+const profSave = document.getElementById('profSave')
+const profLogout = document.getElementById('profLogout')
+const profileBtn = document.getElementById('profileBtn')
+const profCircle = document.getElementById('profCircle')
+const profName = document.getElementById('profName')
+const profBack = document.getElementById('profBack')
+const profPhotoBtn = document.getElementById('profPhotoBtn')
+const profEmojiBtn = document.getElementById('profEmojiBtn')
+const profFileInput = document.getElementById('profFileInput')
+const saveBtn = document.getElementById('saveBtn')
+let isRegister = false
+let selectedAvatar = ''
+
+const AVATARS = ['рџЋ','рџљЂ','рџЊџ','рџ‘ѕ','рџЋ®','рџ”Ґ','рџ’Ћ','рџЊ€','рџЄђ','рџ‘ЁвЂЌрџљЂ','рџ›ё','рџЊЊ','вљЎ','рџЋЇ','рџ’«','рџђ‰','рџ¦Љ','рџђ±','вќ¤пёЏ','рџ’њ','в­ђ','рџЊ™','рџ¦„','рџЌЂ']
+const COLORS = ['#7c3aed','#2563eb','#059669','#d97706','#dc2626','#db2777','#4f46e5','#0891b2']
+
+function saveEmail(email) {
+  let list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+  if (!list.includes(email)) { list.push(email); localStorage.setItem('knownEmails', JSON.stringify(list)) }
+}
+function loadEmails() {
+  const list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+  const dl = document.getElementById('knownEmails')
+  dl.innerHTML = list.map(e => '<option value="' + e.replace(/"/g,'&quot;') + '">').join('')
+}
+function showAuthError(msg) { authError.textContent = msg; authError.style.display = 'block' }
+function hideAuthError() { authError.style.display = 'none' }
+async function apiCall(path, data, method) {
+  const headers = {'Content-Type':'application/json'}
+  if (token) headers['Authorization'] = 'Bearer ' + token
+  try {
+    const r = await fetch(API + path, {method: method || 'POST', headers, body: data ? JSON.stringify(data) : undefined})
+    return await r.json()
+  } catch(e) { return {error:'РћС€РёР±РєР° СЃРѕРµРґРёРЅРµРЅРёСЏ'} }
+}
+
+function getColor(email) {
+  let h = 0
+  for (let i = 0; i < email.length; i++) h = ((h << 5) - h) + email.charCodeAt(i)
+  return COLORS[Math.abs(h) % COLORS.length]
+}
+
+function setAvatarPreview(src, isImg) {
+  if (isImg) {
+    profAvatar.innerHTML = ''
+    profAvatar.style.backgroundImage = 'url("' + src + '")'
+    profAvatar.style.backgroundSize = 'cover'
+    profAvatar.style.fontSize = '0'
+  } else {
+    profAvatar.innerHTML = ''
+    profAvatar.textContent = src
+    profAvatar.style.backgroundImage = ''
+    profAvatar.style.backgroundSize = ''
+    profAvatar.style.fontSize = '32px'
+  }
+}
+
+function updateUI() {
+  const authed = token && userEmail
+  profileBtn.style.display = authed ? 'flex' : 'none'
+  saveBtn.style.display = authed ? '' : 'none'
+  if (authed) {
+    const av = userAvatar || 'рџЋ'
+    const nick = userNick || userEmail.split('@')[0]
+    if (av.startsWith('data:image')) {
+      profCircle.innerHTML = ''
+      profCircle.style.backgroundImage = 'url("' + av + '")'
+      profCircle.style.backgroundSize = 'cover'
+      profCircle.style.fontSize = '0'
+    } else {
+      profCircle.innerHTML = ''
+      profCircle.textContent = av
+      profCircle.style.backgroundImage = ''
+      profCircle.style.background = getColor(userEmail)
+      profCircle.style.fontSize = '15px'
+    }
+    profName.textContent = nick
+    enableGame()
+  } else {
+    disableGame()
+  }
+}
+
+function openProf() {
+  selectedAvatar = userAvatar || 'рџЋ'
+  profEmail.textContent = userEmail
+  profNick.value = userNick || userEmail.split('@')[0]
+  if (selectedAvatar.startsWith('data:image')) {
+    setAvatarPreview(selectedAvatar, true)
+    profGrid.style.display = 'none'
+  } else {
+    setAvatarPreview(selectedAvatar, false)
+    profAvatar.style.background = getColor(userEmail)
+    profGrid.style.display = 'grid'
+    renderAvatarGrid()
+  }
+  profModal.classList.add('show')
+}
+
+function renderAvatarGrid() {
+  profGrid.innerHTML = ''
+  AVATARS.forEach(a => {
+    const div = document.createElement('div')
+    div.className = 'prof-em' + (a === selectedAvatar ? ' active' : '')
+    div.textContent = a
+    div.onclick = () => { selectedAvatar = a; setAvatarPreview(a, false); profAvatar.style.background = getColor(userEmail); renderAvatarGrid(); profGrid.style.display = 'grid' }
+    profGrid.appendChild(div)
+  })
+}
+
+profPhotoBtn.onclick = () => profFileInput.click()
+
+profFileInput.onchange = function(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = function(ev) {
+    const img = new Image()
+    img.onload = function() {
+      const canvas = document.createElement('canvas')
+      const size = 150
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      const s = Math.min(img.width, img.height)
+      const x = (img.width - s) / 2
+      const y = (img.height - s) / 2
+      ctx.drawImage(img, x, y, s, s, 0, 0, size, size)
+      selectedAvatar = canvas.toDataURL('image/jpeg', 0.7)
+      setAvatarPreview(selectedAvatar, true)
+      profGrid.style.display = 'none'
+    }
+    img.src = ev.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+profEmojiBtn.onclick = () => {
+  profGrid.style.display = 'grid'
+  selectedAvatar = 'рџЋ'
+  setAvatarPreview('рџЋ', false)
+  profAvatar.style.background = getColor(userEmail)
+  renderAvatarGrid()
+}
+
+profileBtn.onclick = openProf
+
+profBack.onclick = () => profModal.classList.remove('show')
+
+profSave.onclick = async () => {
+  const nick = profNick.value.trim().slice(0, 15)
+  const res = await apiCall('/api/profile', {nickname: nick, avatar: selectedAvatar}, 'PUT')
+  if (res.ok) {
+    userNick = res.nickname
+    userAvatar = res.avatar
+    localStorage.setItem('starMergeNick', userNick)
+    localStorage.setItem('starMergeAvatar', userAvatar)
+    updateUI()
+    const orig = profSave.textContent
+    profSave.textContent = 'вњ“ РЎРѕС…СЂР°РЅРµРЅРѕ'
+    profSave.style.opacity = '.6'
+    setTimeout(() => { profSave.textContent = orig; profSave.style.opacity = '1' }, 1200)
+  }
+}
+
+profLogout.onclick = () => {
+  token = ''; userEmail = ''; userNick = ''; userAvatar = ''
+  localStorage.removeItem('starMergeToken')
+  localStorage.removeItem('starMergeEmail')
+  localStorage.removeItem('starMergeNick')
+  localStorage.removeItem('starMergeAvatar')
+  profModal.classList.remove('show')
+  updateUI()
+  authModal.classList.add('show')
+}
+
+authSubmit.onclick = async () => {
+  hideAuthError()
+  const email = authEmail.value.trim().toLowerCase()
+  if (!email) { showAuthError('Р’РІРµРґРёС‚Рµ email'); return }
+  const ep = isRegister ? '/api/register' : '/api/login'
+  const res = await apiCall(ep, {email})
+  if (res.error) { showAuthError(res.error); return }
+  token = res.token
+  userEmail = res.email
+  userNick = res.nickname || ''
+  userAvatar = res.avatar || ''
+  localStorage.setItem('starMergeToken', token)
+  localStorage.setItem('starMergeEmail', userEmail)
+  localStorage.setItem('starMergeNick', userNick)
+  localStorage.setItem('starMergeAvatar', userAvatar)
+  saveEmail(userEmail)
+  authModal.classList.remove('show')
+  authEmail.value = ''
+  updateUI()
+  loadProgress()
+}
+
+authSwitch.onclick = () => {
+  isRegister = !isRegister
+  authTitle.textContent = isRegister ? 'вњ¦ Р РµРіРёСЃС‚СЂР°С†РёСЏ' : 'вњ¦ Р’С…РѕРґ'
+  authSubmit.textContent = isRegister ? 'Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ' : 'Р’РѕР№С‚Рё'
+  authSwitch.textContent = isRegister ? 'РЈР¶Рµ РµСЃС‚СЊ Р°РєРєР°СѓРЅС‚? Р’РѕР№С‚Рё' : 'РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ'
+  hideAuthError()
+}
+
+saveBtn.onclick = saveProgress
+
+async function loadProgress() {
+  if (!token) return
+  try {
+    const r = await fetch(API + '/api/load?game=star-merge', {headers:{'Authorization':'Bearer '+token}})
+    const res = await r.json()
+    if (res.ok && res.data && res.data.board) {
+      board = res.data.board
+      score = res.data.score || 0
+      best = res.data.best || 0
+      gameOver = res.data.gameOver || false
+      draw()
+    }
+  } catch(e) {}
+}
+// в•ђв•ђ STARS в•ђв•ђ
+const bg = document.getElementById('space-bg')
+const colors = ['#6ba4ff','#fff','#ffe08a','#ff6b6b','#a855f7','#4ade80','#38bdf8','#f472b6']
+const starTypes = ['dot','dot','dot','cross','diamond','glow','pin','pin']
+const anims = ['twinkle','twinkle','twinkle','pulse','pulse','drift','twinkle','pulse']
+for (let i = 0; i < 100; i++) {
+  const s = document.createElement('div')
+  const type = starTypes[Math.floor(Math.random() * starTypes.length)]
+  const color = colors[Math.floor(Math.random() * colors.length)]
+  const sz = type === 'glow' ? Math.random() * 8 + 4 : type === 'cross' || type === 'diamond' ? Math.random() * 4 + 2 : Math.random() * 2.5 + .5
+  s.className = 'star star-' + type
+  const anim = anims[Math.floor(Math.random() * anims.length)]
+  const dur = (Math.random() * 4 + 2).toFixed(1)
+  s.style.cssText = `--s:${sz}px;--c:${color};--c2:${color};--g:${(sz*2+4).toFixed(0)}px;--g2:${(sz*3+8).toFixed(0)}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${dur}s;--a:${anim};animation-delay:${(Math.random()*5).toFixed(1)}s`
+  bg.appendChild(s)
+}
+// Shooting stars
+function spawnShootingStar() {
+  const s = document.createElement('div')
+  s.className = 'shooting-star'
+  s.style.cssText = `top:${Math.random()*40+5}%;left:${Math.random()*40-20}%;--sd:${(Math.random()*1.5+1).toFixed(1)}s`
+  bg.appendChild(s)
+  setTimeout(() => s.remove(), 3000)
+}
+setInterval(spawnShootingStar, Math.random() * 8000 + 4000)
+setTimeout(spawnShootingStar, 1000)
+setTimeout(spawnShootingStar, 3000)
+
+// в•ђв•ђ CONTROLS в•ђв•ђ
+document.addEventListener('keydown', e => {
+  const m = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}
+  if (m[e.key]) { e.preventDefault(); move(m[e.key]) }
+})
+
+let touchStartX = 0, touchStartY = 0
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX
+  touchStartY = e.touches[0].clientY
+}, {passive:true})
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX
+  const dy = e.changedTouches[0].clientY - touchStartY
+  if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return
+  if (Math.abs(dx) > Math.abs(dy)) {
+    move(dx > 0 ? 'right' : 'left')
+  } else {
+    move(dy > 0 ? 'down' : 'up')
+  }
+}, {passive:true})
+
+// auto-save
+const origEnd = endGame
+endGame = function() { origEnd(); if (token) saveProgress() }
+let saveTimer = 0
+async function saveProgress() {
+  if (!token) return
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(async () => {
+    const res = await apiCall('/api/save', {game:'star-merge', data:{board,score,best,gameOver}})
+    if (res.ok) { saveBtn.textContent = 'вњ“'; setTimeout(() => saveBtn.textContent = 'рџ’ѕ', 1500) }
+  }, 500)
+}
+window.addEventListener('beforeunload', () => { if (token) { clearTimeout(saveTimer); fetch(API+'/api/save', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({game:'star-merge', data:{board,score,best,gameOver}}), keepalive:true}) } })
+function enableGame() {
+  document.querySelector('.grid-wrap').style.opacity = '1'
+  document.querySelector('.grid-wrap').style.pointerEvents = ''
+  document.querySelector('.controls').style.opacity = '1'
+  document.querySelector('.controls').style.pointerEvents = ''
+}
+
+function disableGame() {
+  document.querySelector('.grid-wrap').style.opacity = '.3'
+  document.querySelector('.grid-wrap').style.pointerEvents = 'none'
+  document.querySelector('.controls').style.opacity = '.3'
+  document.querySelector('.controls').style.pointerEvents = 'none'
+}
+
+loadEmails()
+updateUI()
+newGame()
+if (token) {
+  loadProgress()
+}
+</script>
+</body>
+</html>
