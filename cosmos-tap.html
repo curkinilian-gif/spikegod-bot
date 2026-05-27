@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>вњ¦ Cosmos Tap</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#050212;color:#fff}
+#app{width:100%;max-width:420px;height:100vh;margin:0 auto;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,#1a0a3e 0%,#050212 70%);display:flex;flex-direction:column}
+/* stars */#stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d) ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:.2;transform:scale(.8)}100%{opacity:1;transform:scale(1.2)}}
+/* nebula */
+.nebula{position:absolute;border-radius:50%;pointer-events:none;filter:blur(60px);opacity:.15;animation:drifting var(--d) ease-in-out infinite alternate}
+@keyframes drifting{0%{transform:translate(0,0)}100%{transform:translate(30px,-30px)}}
+/* header */
+.header{position:relative;z-index:10;padding:12px 20px 8px;background:linear-gradient(180deg,rgba(10,4,30,.9) 0%,transparent 100%)}
+.coin-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.coin-icon{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd700,#ff8c00);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 20px rgba(255,215,0,.3);flex-shrink:0}
+.coin-count{font-size:28px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub-stats{display:flex;gap:16px;font-size:12px;color:rgba(200,190,255,.5);margin-bottom:6px;font-weight:600;letter-spacing:.3px}
+.sub-stats span{display:flex;align-items:center;gap:4px}
+/* xp bar */
+.xp-wrap{position:relative;height:14px;background:rgba(255,255,255,.05);border-radius:10px;overflow:hidden}
+.xp-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#6a30e0,#a855f7,#c084fc);transition:width .4s ease;position:relative}
+.xp-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2));border-radius:10px}
+.xp-label{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;line-height:14px;color:rgba(255,255,255,.7);letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+/* game area */
+.game-area{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:0 20px;min-height:0;gap:4px}
+.planet-wrap{position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent;margin:10px 0}
+.planet{width:160px;height:160px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#6a40c0,#2a1060 60%,#1a0840);position:relative;transition:transform .1s;box-shadow:0 0 60px rgba(100,50,200,.3),0 0 120px rgba(80,40,180,.15);overflow:hidden}
+.planet::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(200,180,255,.15) 0%,transparent 50%)}
+.planet::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(168,85,247,.15);box-shadow:inset 0 0 30px rgba(80,40,160,.3)}
+.planet-bands{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+.band{position:absolute;left:-10%;width:120%;height:8px;border-radius:50%;opacity:.3}
+.band1{top:30%;background:rgba(120,80,200,.3);transform:rotate(-5deg)}
+.band2{top:48%;background:rgba(160,100,220,.25);transform:rotate(3deg)}
+.band3{top:65%;background:rgba(80,40,160,.2);transform:rotate(-8deg)}
+.planet-craters{position:absolute;inset:0;border-radius:50%}
+.crater{position:absolute;border-radius:50%;background:rgba(0,0,0,.2);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.planet-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2}
+.planet-eyes{display:flex;gap:24px;margin-top:-8px}
+.planet-eye{width:22px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 10px rgba(255,255,255,.2)}
+.planet-pupil{width:12px;height:14px;border-radius:50%;background:#1a0a30;position:relative}
+.planet-pupil::after{content:'';position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:#fff}
+.planet-smile{width:36px;height:14px;border-radius:0 0 50% 50%;border:2px solid rgba(200,170,255,.6);border-top:0;margin-top:4px}
+/* orbit ring */
+.orbit-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(168,85,247,.08);pointer-events:none}
+.orbit-ring1{width:220px;height:220px;animation:spin 20s linear infinite}
+.orbit-ring2{width:260px;height:260px;animation:spin 25s linear infinite reverse}
+.orbit-dot{position:absolute;width:6px;height:6px;border-radius:50%;background:#a855f7;box-shadow:0 0 10px #a855f7}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* tap particles */
+.tap-particle{position:absolute;pointer-events:none;border-radius:50%;animation:particleFade .8s ease-out forwards}
+@keyframes particleFade{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+/* combo */
+.combo-indicator{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:24px;font-weight:900;color:#ff6b35;opacity:0;transition:all .3s;text-shadow:0 0 20px rgba(255,107,53,.5)}
+.combo-indicator.show{opacity:1;top:-30px}
+/* energy bar */
+.energy-wrap{width:100%;max-width:320px;margin:4px auto 0}
+.energy-label{display:flex;justify-content:space-between;font-size:12px;color:rgba(200,190,255,.6);font-weight:600;margin-bottom:4px}
+.energy-track{height:10px;background:rgba(255,255,255,.05);border-radius:10px;overflow:hidden;position:relative}
+.energy-fill{height:100%;border-radius:10px;transition:width .3s ease;position:relative}
+.energy-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15));border-radius:10px}
+/* floating +text */
+.float-text{position:absolute;pointer-events:none;font-weight:900;font-size:22px;color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.5);animation:floatUp 1s ease-out forwards;z-index:20}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(.8)}50%{opacity:1;transform:translateY(-30px) scale(1.1)}100%{opacity:0;transform:translateY(-60px) scale(1)}}
+/* bottom nav */
+.nav{z-index:20;background:rgba(8,4,25,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(168,85,247,.1);display:flex;padding:8px 0 env(safe-area-inset-bottom,8px);flex-shrink:0}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px;cursor:pointer;border:none;background:none;color:rgba(200,190,255,.3);font-family:'Inter',sans-serif;transition:all .3s;position:relative}
+.nav-btn.active{color:#a855f7}
+.nav-btn.active::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:24px;height:3px;border-radius:2px;background:#a855f7}
+.nav-icon{font-size:22px;line-height:1}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.3px}
+
+/* shop */
+.shop-view{z-index:8;background:rgba(5,2,18,.97);backdrop-filter:blur(10px);display:none;flex-direction:column;padding:16px 16px 16px;overflow-y:auto;flex:1}
+.shop-view.show{display:flex}
+.shop-header{display:flex;align-items:center;gap:10px;padding:8px 0 16px;position:sticky;top:0;z-index:2;background:rgba(5,2,18,.95)}
+.shop-header .coin-count{font-size:24px}
+.shop-grid{display:flex;flex-direction:column;gap:10px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;transition:all .3s;cursor:pointer}
+.shop-item:active{transform:scale(.97)}
+.shop-item.can-buy{border-color:rgba(50,230,160,.2);background:rgba(50,230,160,.04)}
+.shop-icon{font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(168,85,247,.1);border-radius:12px;flex-shrink:0}
+.shop-info{flex:1;min-width:0}
+.shop-name{font-size:14px;font-weight:700;margin-bottom:2px}
+  .game-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:rgba(255,255,255,.5);transition:all .15s;background:rgba(255,255,255,.06);flex-shrink:0}
+  .game-back:active{background:rgba(255,255,255,.1);transform:scale(.9)}
+  .shop-desc{font-size:11px;color:rgba(200,190,255,.4)}
+.shop-right{text-align:right;flex-shrink:0}
+.shop-level{font-size:11px;color:rgba(200,190,255,.3);margin-bottom:4px}
+.shop-btn{padding:6px 16px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .3s;background:linear-gradient(135deg,#32e6a0,#1abc7a);color:#fff}
+.shop-btn.cant{background:rgba(255,255,255,.06);color:rgba(255,255,255,.2)}
+
+/* stats */
+.stats-view{z-index:8;background:rgba(5,2,18,.97);backdrop-filter:blur(10px);display:none;flex-direction:column;padding:16px 16px 16px;overflow-y:auto;flex:1}
+.stats-view.show{display:flex}
+.stats-header{font-size:20px;font-weight:900;padding:8px 0 16px;text-align:center;background:linear-gradient(135deg,#c084fc,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:12px;margin-bottom:8px}
+.stat-label{font-size:13px;color:rgba(200,190,255,.5);font-weight:600}
+.stat-value{font-size:16px;font-weight:700;color:#fff}
+
+/* toast */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);z-index:100;padding:12px 28px;background:rgba(10,5,30,.9);border:1px solid rgba(168,85,247,.2);border-radius:16px;font-weight:700;font-size:15px;opacity:0;transition:all .3s;pointer-events:none;backdrop-filter:blur(10px)}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.start-overlay{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.9);backdrop-filter:blur(8px)}
+.start-overlay.show{display:flex}
+.start-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:32px 28px;width:300px;max-width:85vw;text-align:center}
+.start-icon{font-size:48px;margin-bottom:8px}
+.start-title{font-size:18px;font-weight:900;margin-bottom:4px}
+.start-sub{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:24px}
+.start-btn{width:100%;padding:14px;border-radius:14px;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:10px}
+.start-btn:active{transform:scale(.97)}
+.start-btn-primary{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff}
+.start-btn-secondary{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stars"></div>
+  <div id="nebulae"></div>
+  
+  <!-- Header -->
+  <div class="header">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="game-back" onclick="history.back()">в†ђ</div>
+      <div class="coin-row" style="margin-bottom:0">
+        <div class="coin-icon">вњ¦</div>
+        <span class="coin-count" id="coinDisplay">0</span>
+      </div>
+    </div>
+    <div class="sub-stats">
+      <span>рџљЂ <span id="tapPowerDisplay">+1</span></span>
+      <span>рџ”Ґ <span id="comboDisplay">x1.0</span></span>
+      <span>рџЏ† Lv <span id="levelDisplay">1</span></span>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-fill" id="xpFill" style="width:0%"></div>
+      <span class="xp-label" id="xpLabel">0 / 100</span>
+    </div>
+  </div>
+
+  <!-- Game area -->
+  <div class="game-area">
+    <div class="planet-wrap" id="planetWrap">
+      <div class="planet" id="planet">
+        <div class="planet-bands">
+          <div class="band band1"></div>
+          <div class="band band2"></div>
+          <div class="band band3"></div>
+        </div>
+        <div class="planet-craters">
+          <div class="crater" style="width:14px;height:14px;top:22%;left:25%"></div>
+          <div class="crater" style="width:10px;height:10px;top:38%;right:22%"></div>
+          <div class="crater" style="width:12px;height:12px;top:62%;left:35%"></div>
+          <div class="crater" style="width:8px;height:8px;top:55%;right:32%"></div>
+          <div class="crater" style="width:16px;height:16px;top:18%;right:28%"></div>
+        </div>
+        <div class="planet-face">
+          <div class="planet-eyes">
+            <div class="planet-eye"><div class="planet-pupil"></div></div>
+            <div class="planet-eye"><div class="planet-pupil"></div></div>
+          </div>
+          <div class="planet-smile"></div>
+        </div>
+      </div>
+      <div class="orbit-ring orbit-ring1"><div class="orbit-dot" style="top:0;left:50%"></div></div>
+      <div class="orbit-ring orbit-ring2"><div class="orbit-dot" style="bottom:10%;right:0"></div></div>
+    </div>
+
+    <div class="energy-wrap">
+      <div class="energy-label">
+        <span>вљЎ Energy</span>
+        <span><span id="energyDisplay">1500</span> / <span id="maxEnergyDisplay">1500</span></span>
+      </div>
+      <div class="energy-track">
+        <div class="energy-fill" id="energyFill" style="width:100%;background:linear-gradient(90deg,#6366f1,#818cf8)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop -->
+  <div class="shop-view" id="shopView">
+    <div class="shop-header">
+      <div class="coin-icon" style="width:28px;height:28px;font-size:14px">вњ¦</div>
+      <span class="coin-count" id="shopCoinDisplay">0</span>
+    </div>
+    <div class="shop-grid" id="shopGrid"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-view" id="statsView">
+    <div class="stats-header">рџ“Љ Statistics</div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Nav -->
+  <div class="nav">
+    <button class="nav-btn active" data-tab="tap"><span class="nav-icon">рџЊЊ</span><span class="nav-label">Tap</span></button>
+    <button class="nav-btn" data-tab="shop"><span class="nav-icon">рџЄђ</span><span class="nav-label">Shop</span></button>
+    <button class="nav-btn" data-tab="stats"><span class="nav-icon">рџ“Љ</span><span class="nav-label">Stats</span></button>
+  </div>
+</div>
+
+<div class="start-overlay" id="startOverlay">
+  <div class="start-box">
+    <div class="start-icon">рџЊЊ</div>
+    <div class="start-title">Cosmos Tap</div>
+    <div class="start-sub">РќР°Р№РґРµРЅРѕ СЃРѕС…СЂР°РЅРµРЅРёРµ</div>
+    <button class="start-btn start-btn-primary" onclick="continueGame()">в–¶ РџСЂРѕРґРѕР»Р¶РёС‚СЊ</button>
+    <button class="start-btn start-btn-secondary" onclick="startNewGame()">рџ”„ РќРѕРІР°СЏ РёРіСЂР°</button>
+  </div>
+</div>
+
+<div class="combo-indicator" id="comboIndicator">рџ”Ґ x1.0</div>
+
+<script>
+// в”Ђв”Ђ DATA в”Ђв”Ђ
+const KEY = 'cosmos_tap_data';
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || getDefault(); } catch(e) { return getDefault(); }
+}
+function getDefault() {
+  return { coins: 0, total: 0, energy: 1500, maxEnergy: 1500, level: 1, xp: 0, tapPower: 1, tapLv: 0, energyLv: 0, regenLv: 0, multLv: 0 };
+}
+let d = loadData();
+function save() { localStorage.setItem(KEY, JSON.stringify(d)); }
+
+function hasSaveData() {
+  const def = getDefault();
+  for (let k in def) { if (d[k] !== def[k]) return true }
+  return false
+}
+function continueGame() { document.getElementById('startOverlay').classList.remove('show') }
+function startNewGame() {
+  const def = getDefault();
+  for (let k in def) d[k] = def[k]
+  localStorage.removeItem(KEY)
+  document.getElementById('startOverlay').classList.remove('show')
+  updateUI()
+}
+
+function price(base, lv) { return Math.floor(base * Math.pow(1.35, lv)); }
+function xpNeeded(lv) { return 80 + lv * 45; }
+function regenRate() { return 2 + d.regenLv * 0.8; }
+function comboMult() { return 1 + Math.min(d.multLv, 50) * 0.02; }
+
+// в”Ђв”Ђ STARS в”Ђв”Ђ
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 160; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const size = Math.random() * 2.5 + .5;
+  s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${2+Math.random()*3}s;animation-delay:${Math.random()*3}s;opacity:${.2+Math.random()*.3}`;
+  starsEl.appendChild(s);
+}
+
+// в”Ђв”Ђ NEBULAE в”Ђв”Ђ
+const nebEl = document.getElementById('nebulae');
+const nebColors = ['rgba(100,40,200,.12)','rgba(60,30,150,.1)','rgba(140,50,200,.08)','rgba(50,80,180,.1)'];
+for (let i = 0; i < 6; i++) {
+  const n = document.createElement('div');
+  n.className = 'nebula';
+  const sz = 150 + Math.random() * 200;
+  n.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*80+10}%;left:${Math.random()*80+10}%;background:${nebColors[i%4]};--d:${6+Math.random()*6}s;animation-delay:${Math.random()*4}s`;
+  nebEl.appendChild(n);
+}
+
+// в”Ђв”Ђ PLANET в”Ђв”Ђ
+const planet = document.getElementById('planet');
+const planetWrap = document.getElementById('planetWrap');
+let combo = 0, lastTap = 0;
+let floating = [];
+
+planetWrap.addEventListener('click', (e) => {
+  if (document.querySelector('.shop-view.show') || document.querySelector('.stats-view.show')) return;
+  if (d.energy < 1) {
+    showToast('вљЎ No energy! Wait for regen');
+    return;
+  }
+  d.energy = Math.max(0, d.energy - 1);
+  const now = Date.now();
+  if (now - lastTap < 1500) combo++; else combo = 1;
+  lastTap = now;
+  const mult = comboMult() + Math.min(combo-1, 50) * 0.02;
+  const gain = Math.floor(d.tapPower * mult);
+  d.coins += gain; d.total += gain; d.xp += gain;
+  
+  const needed = xpNeeded(d.level);
+  while (d.xp >= needed) {
+    d.xp -= needed;
+    d.level++;
+    d.maxEnergy += 60;
+    d.energy = Math.min(d.energy + 150, d.maxEnergy);
+    showToast(`рџЊџ Level ${d.level}!`);
+  }
+  save();
+  updateUI();
+  
+  // squash
+  planet.style.transform = 'scale(.85)';
+  setTimeout(() => planet.style.transform = 'scale(1)', 100);
+  
+  // particles
+  const rect = planet.getBoundingClientRect();
+  const cx = rect.left + rect.width/2 + window.scrollX;
+  const cy = rect.top + rect.height/2 + window.scrollY;
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = Math.random() * 80 + 30;
+    const p = document.createElement('div');
+    p.className = 'tap-particle';
+    const sz = 3 + Math.random() * 6;
+    const colors = ['#a855f7','#c084fc','#818cf8','#ffd700','#f472b6'];
+    p.style.cssText = `width:${sz}px;height:${sz}px;left:${cx}px;top:${cy}px;background:${colors[i%5]};--tx:${Math.cos(a)*sp}px;--ty:${Math.sin(a)*sp}px;box-shadow:0 0 ${sz*2}px ${colors[i%5]}`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+  
+  // float text
+  const ft = document.createElement('div');
+  ft.className = 'float-text';
+  const label = `+${gain}` + (mult > 1.1 ? ` рџ”Ґ` : '');
+  ft.textContent = label;
+  ft.style.left = (cx + (Math.random()-0.5)*60) + 'px';
+  ft.style.top = (cy - 40) + 'px';
+  document.body.appendChild(ft);
+  setTimeout(() => ft.remove(), 1000);
+});
+
+// в”Ђв”Ђ ENERGY REGEN в”Ђв”Ђ
+setInterval(() => {
+  if (d.energy < d.maxEnergy) {
+    d.energy = Math.min(d.maxEnergy, d.energy + regenRate() * 0.1);
+    save();
+    updateUI();
+  }
+}, 100);
+
+// в”Ђв”Ђ NAV в”Ђв”Ђ
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('shopView').classList.toggle('show', tab === 'shop');
+    document.getElementById('statsView').classList.toggle('show', tab === 'stats');
+    if (tab === 'stats') renderStats();
+    if (tab === 'shop') renderShop();
+  });
+});
+
+// в”Ђв”Ђ SHOP в”Ђв”Ђ
+function renderShop() {
+  const grid = document.getElementById('shopGrid');
+  const items = [
+    ['tapLv','рџљЂ','Cosmic Tap',90,`Power: +${d.tapPower} в†’ +${d.tapPower+1}`],
+    ['energyLv','рџ”‹','Stellar Energy',180,`Max: ${d.maxEnergy} в†’ ${d.maxEnergy+60}`],
+    ['regenLv','вљЎ','Nebula Regen',140,`Regen: +${regenRate().toFixed(1)} в†’ +${(regenRate()+0.8).toFixed(1)}/s`],
+    ['multLv','рџ’«','Combo Boost',350,`Combo: x${comboMult().toFixed(2)} в†’ x${(comboMult()+0.02).toFixed(2)}`],
+  ];
+  grid.innerHTML = items.map(([key, icon, name, base, desc]) => {
+    const lv = d[key];
+    const pr = price(base, lv);
+    const canBuy = d.coins >= pr;
+    return `<div class="shop-item ${canBuy?'can-buy':''}" data-key="${key}" data-price="${pr}">
+      <div class="shop-icon">${icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${name}</div>
+        <div class="shop-desc">${desc}</div>
+      </div>
+      <div class="shop-right">
+        <div class="shop-level">Lv ${lv}</div>
+        <button class="shop-btn ${canBuy?'':'cant'}" ${canBuy?'':'disabled'}>${pr.toLocaleString()} вњ¦</button>
+      </div>
+    </div>`;
+  }).join('');
+  
+  grid.querySelectorAll('.shop-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const key = item.dataset.key;
+      const pr = parseInt(item.dataset.price);
+      if (d.coins >= pr) {
+        d.coins -= pr;
+        d[key]++;
+        if (key === 'energyLv') {
+          d.maxEnergy += 60;
+          d.energy = Math.min(d.energy + 60, d.maxEnergy);
+        }
+        save();
+        updateUI();
+        renderShop();
+        showToast(`вњ… ${item.querySelector('.shop-name').textContent} Lv${d[key]}`);
+      }
+    });
+  });
+  document.getElementById('shopCoinDisplay').textContent = d.coins.toLocaleString();
+}
+
+// в”Ђв”Ђ STATS в”Ђв”Ђ
+function renderStats() {
+  const el = document.getElementById('statsContent');
+  const stats = [
+    ['рџЊџ Total Earned', d.total.toLocaleString(), '#ffd700'],
+    ['рџЄђ Level', String(d.level), '#a855f7'],
+    ['рџљЂ Tap Power', `+${d.tapPower}`, '#c084fc'],
+    ['рџ”‹ Max Energy', String(d.maxEnergy), '#818cf8'],
+    ['вљЎ Regen Rate', `+${regenRate().toFixed(1)}/s`, '#4ade80'],
+    ['рџ’« Combo Mult', `x${comboMult().toFixed(2)}`, '#f472b6'],
+    ['рџ”Ґ Best Combo', String(combo), '#fb923c'],
+  ];
+  el.innerHTML = stats.map(([l, v, c]) =>
+    `<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-value" style="color:${c}">${v}</span></div>`
+  ).join('');
+}
+
+// в”Ђв”Ђ UI UPDATE в”Ђв”Ђ
+function updateUI() {
+  document.getElementById('coinDisplay').textContent = d.coins.toLocaleString();
+  document.getElementById('tapPowerDisplay').textContent = `+${d.tapPower}`;
+  document.getElementById('levelDisplay').textContent = d.level;
+  const mult = comboMult() + Math.min(Math.max(0, (Date.now()-lastTap)<1500 ? combo-1 : 0), 50) * 0.02;
+  document.getElementById('comboDisplay').textContent = `x${mult.toFixed(1)}`;
+  
+  // xp bar
+  const needed = xpNeeded(d.level);
+  const pct = Math.min(100, (d.xp / needed) * 100);
+  document.getElementById('xpFill').style.width = pct + '%';
+  document.getElementById('xpLabel').textContent = `${Math.floor(d.xp)} / ${needed}`;
+  
+  // energy
+  document.getElementById('energyDisplay').textContent = Math.floor(d.energy);
+  document.getElementById('maxEnergyDisplay').textContent = d.maxEnergy;
+  const ePct = Math.min(100, (d.energy / d.maxEnergy) * 100);
+  const fill = document.getElementById('energyFill');
+  fill.style.width = ePct + '%';
+  if (ePct > 30) fill.style.background = 'linear-gradient(90deg,#6366f1,#818cf8)';
+  else if (ePct > 10) fill.style.background = 'linear-gradient(90deg,#f59e0b,#fb923c)';
+  else fill.style.background = 'linear-gradient(90deg,#ef4444,#f87171)';
+  
+  // combo indicator
+  const ci = document.getElementById('comboIndicator');
+  if (combo > 2 && (Date.now()-lastTap) < 1500) {
+    ci.textContent = `рџ”Ґ x${mult.toFixed(1)}`;
+    ci.classList.add('show');
+    ci.style.color = `rgb(${Math.min(255,100+combo*5)}, ${Math.max(100,200-combo*3)}, 50)`;
+  } else {
+    ci.classList.remove('show');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// в”Ђв”Ђ AUTO SAVE в”Ђв”Ђ
+setInterval(save, 10000);
+
+// в”Ђв”Ђ INIT в”Ђв”Ђ
+updateUI();
+if (hasSaveData()) {
+  document.getElementById('startOverlay').classList.add('show')
+}
+</script>
+</body>
+</html>
