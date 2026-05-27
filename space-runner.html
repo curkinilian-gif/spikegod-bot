@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>вњ¦ Space Runner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#03010a;color:#fff;font-family:'Inter',sans-serif}
+  #app{width:100%;max-width:420px;height:100vh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  canvas{display:block;flex:1;width:100%;height:100%;background:#03010a;position:absolute;inset:0}
+  .header{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;background:linear-gradient(180deg,rgba(3,1,10,.9),transparent);pointer-events:none}
+  .header>*{pointer-events:auto}
+  .game-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:rgba(255,255,255,.5);transition:all .15s;background:rgba(255,255,255,.06);flex-shrink:0}
+  .game-back:active{background:rgba(255,255,255,.1);transform:scale(.9)}
+  .score-box{text-align:right}
+  .score-label{font-size:9px;color:rgba(255,255,255,.25);font-weight:600;letter-spacing:.5px}
+  .score{font-size:22px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .best{font-size:10px;color:rgba(255,255,255,.2);font-weight:600}
+  .profile-btn{display:none;align-items:center;gap:6px;cursor:pointer;pointer-events:auto}
+  .profile-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;overflow:hidden;background-size:cover;background-position:center;flex-shrink:0}
+  .profile-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .auth-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .auth-modal.show{display:flex}
+  .auth-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .auth-title{text-align:center;font-size:16px;font-weight:700;margin-bottom:16px;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .auth-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;outline:none;margin-bottom:12px;font-family:'Inter',sans-serif;transition:border-color .2s;text-align:center}
+  .auth-input:focus{border-color:rgba(168,85,247,.3)}
+  .auth-input::placeholder{color:rgba(255,255,255,.15)}
+  .auth-submit{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .auth-submit:active{transform:scale(.97)}
+  .auth-switch{text-align:center;font-size:11px;color:rgba(255,255,255,.2);cursor:pointer}
+  .auth-error{font-size:11px;color:#ef4444;text-align:center;margin-bottom:8px;display:none}
+  .prof-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px)}
+  .prof-modal.show{display:flex}
+  .prof-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px 24px;width:320px;max-width:90vw}
+  .prof-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;overflow:hidden;background-size:cover;background-position:center}
+  .prof-email{text-align:center;font-size:11px;color:rgba(255,255,255,.15);margin-bottom:16px}
+  .prof-input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:500;outline:none;margin-bottom:14px;font-family:'Inter',sans-serif;transition:border-color .2s;text-align:center}
+  .prof-input:focus{border-color:rgba(168,85,247,.3)}
+  .prof-input::placeholder{color:rgba(255,255,255,.15)}
+  .prof-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+  .prof-em{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .1s}
+  .prof-em:active{transform:scale(.85);background:rgba(168,85,247,.2)}
+  .prof-em.active{border-color:#a855f7;background:rgba(168,85,247,.15)}
+  .prof-em-sm{width:auto!important;aspect-ratio:auto!important;padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600}
+  .prof-save{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:8px}
+  .prof-save:active{transform:scale(.97)}
+  .prof-logout{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(239,68,68,.15);background:rgba(239,68,68,.06);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+  .prof-logout:active{transform:scale(.97)}
+  .prof-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:rgba(255,255,255,.3);transition:all .15s}
+  .prof-back:active{background:rgba(255,255,255,.06);transform:scale(.9)}
+  .game-over{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.85);backdrop-filter:blur(12px);flex-direction:column}
+  .game-over.show{display:flex}
+  .go-title{font-size:48px;margin-bottom:8px}
+  .go-score{font-size:20px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:14px}
+  .go-btn{padding:12px 32px;border-radius:14px;border:none;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+  .go-btn:active{transform:scale(.97)}
+
+  .hud{position:absolute;top:56px;left:50%;transform:translateX(-50%);z-index:10;text-align:center;pointer-events:none}
+  .hud-time{font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;color:rgba(255,255,255,.08);letter-spacing:2px}
+  .hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;font-size:11px;color:rgba(255,255,255,.12);font-weight:500;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="gameCanvas"></canvas>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="game-back" onclick="history.back()">в†ђ</div>
+    <div class="profile-btn" id="profileBtn">
+      <div class="profile-circle" id="profCircle">рџЏѓ</div>
+      <span class="profile-name" id="profName">РќРёРє</span>
+    </div>
+  </div>
+  <div class="score-box">
+    <div class="score-label">Р Р•РљРћР Р”</div>
+    <div class="score" id="bestDisplay">0</div>
+    <div class="best" id="lastScoreDisplay"></div>
+  </div>
+</div>
+
+<div class="hud">
+  <div class="hud-time" id="distanceDisplay">0</div>
+</div>
+
+<div class="hint">в†ђ С‚Р°Рї / РїСЂРѕР±РµР» С‡С‚РѕР±С‹ РїСЂС‹РіРЅСѓС‚СЊ в†’</div>
+
+<div class="game-over" id="gameOver">
+  <div class="go-title">рџ’«</div>
+  <div class="go-score" id="finalScore">0 Рј</div>
+  <button class="go-btn" onclick="startGame()">рџ”„ Р—Р°РЅРѕРІРѕ</button>
+</div>
+
+
+</div>
+
+<div class="auth-modal" id="authModal">
+  <div class="auth-box">
+    <div class="auth-title" id="authTitle">вњ¦ Р’С…РѕРґ</div>
+    <div class="auth-error" id="authError"></div>
+    <input class="auth-input" id="authEmail" type="email" placeholder="Email" autocomplete="off" list="knownEmails">
+    <datalist id="knownEmails"></datalist>
+    <button class="auth-submit" id="authSubmit">Р’РѕР№С‚Рё</button>
+    <div class="auth-switch" id="authSwitch">РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</div>
+  </div>
+</div>
+
+<div class="prof-modal" id="profModal">
+  <div class="prof-box">
+    <div style="display:flex;align-items:center;margin-bottom:12px">
+      <div class="prof-back" id="profBack">в†ђ</div>
+      <div style="flex:1;text-align:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.25)">РџСЂРѕС„РёР»СЊ</div>
+      <div style="width:30px"></div>
+    </div>
+    <div class="prof-avatar" id="profAvatar">рџЏѓ</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:14px;flex-wrap:wrap">
+      <button class="prof-em prof-em-sm" id="profPhotoBtn">рџ–ј С„РѕС‚Рѕ</button>
+      <button class="prof-em prof-em-sm" id="profEmojiBtn">рџЂ СЌРјРѕРґР·Рё</button>
+    </div>
+    <input type="file" id="profFileInput" accept="image/*" style="display:none">
+    <div class="prof-email" id="profEmail">email@mail.com</div>
+    <input class="prof-input" id="profNick" type="text" placeholder="РќРёРєРЅРµР№Рј" maxlength="15">
+    <div class="prof-grid" id="profGrid" style="display:none"></div>
+    <button class="prof-save" id="profSave">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
+    <button class="prof-logout" id="profLogout">Р’С‹Р№С‚Рё</button>
+  </div>
+</div>
+
+<script>
+// в•ђв•ђ AUTH в•ђв•ђ
+const API = window.location.origin
+const AKEY = 'starMerge'
+const BEST_KEY = 'runnerBest'
+let token = localStorage.getItem(AKEY+'Token') || ''
+let userEmail = localStorage.getItem(AKEY+'Email') || ''
+let userNick = localStorage.getItem(AKEY+'Nick') || ''
+let userAvatar = localStorage.getItem(AKEY+'Avatar') || ''
+let isRegister = false
+let selectedAvatar = 'рџЏѓ'
+const AVATARS = ['рџЋ','рџљЂ','рџЊџ','рџ‘ѕ','рџЋ®','рџ”Ґ','рџ’Ћ','рџЊ€','рџЄђ','рџ‘ЁвЂЌрџљЂ','рџ›ё','рџЊЊ','вљЎ','рџЋЇ','рџ’«','рџђ‰','рџ¦Љ','рџђ±','вќ¤пёЏ','рџ’њ','в­ђ','рџЊ™','рџ¦„','рџЌЂ']
+const COLORS = ['#7c3aed','#2563eb','#059669','#d97706','#dc2626','#db2777','#4f46e5','#0891b2']
+
+function apiCall(path, data, method) {
+  const headers = {'Content-Type':'application/json'}
+  if (token) headers['Authorization'] = 'Bearer ' + token
+  return fetch(API + path, {method: method || 'POST', headers, body: data ? JSON.stringify(data) : undefined}).then(r => r.json()).catch(() => ({error:'РћС€РёР±РєР° СЃРѕРµРґРёРЅРµРЅРёСЏ'}))
+}
+function getColor(email) {
+  let h = 0
+  for (let i = 0; i < email.length; i++) h = ((h << 5) - h) + email.charCodeAt(i)
+  return COLORS[Math.abs(h) % COLORS.length]
+}
+function setAvatarPreview(src, isImg) {
+  const el = document.getElementById('profAvatar')
+  if (isImg) { el.innerHTML = ''; el.style.backgroundImage = 'url("'+src+'")'; el.style.backgroundSize = 'cover'; el.style.fontSize = '0' }
+  else { el.innerHTML = ''; el.textContent = src; el.style.backgroundImage = ''; el.style.backgroundSize = ''; el.style.fontSize = '32px' }
+}
+function saveEmail(email) {
+  let list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+  if (!list.includes(email)) { list.push(email); localStorage.setItem('knownEmails', JSON.stringify(list)) }
+}
+function loadEmails() {
+  const list = JSON.parse(localStorage.getItem('knownEmails') || '[]')
+  const dl = document.getElementById('knownEmails')
+  dl.innerHTML = list.map(e => '<option value="'+e+'">').join('')
+}
+function showAuthError(msg) { const e = document.getElementById('authError'); e.textContent = msg; e.style.display = 'block' }
+function hideAuthError() { document.getElementById('authError').style.display = 'none' }
+function updateUI() {
+  const authed = token && userEmail
+  document.getElementById('profileBtn').style.display = authed ? 'flex' : 'none'
+  if (authed) {
+    const av = userAvatar || 'рџЏѓ'; const nick = userNick || userEmail.split('@')[0]
+    const c = document.getElementById('profCircle'); const n = document.getElementById('profName')
+    if (av.startsWith('data:image')) { c.innerHTML = ''; c.style.backgroundImage = 'url("'+av+'")'; c.style.backgroundSize = 'cover'; c.style.fontSize = '0' }
+    else { c.innerHTML = ''; c.textContent = av; c.style.backgroundImage = ''; c.style.background = getColor(userEmail); c.style.fontSize = '13px' }
+    n.textContent = nick
+  }
+}
+
+// в•ђв•ђ CANVAS SETUP в•ђв•ђ
+const canvas = document.getElementById('gameCanvas')
+const ctx = canvas.getContext('2d')
+let W, H
+
+function resize() {
+  const app = document.getElementById('app')
+  const rect = app.getBoundingClientRect()
+  canvas.width = W = rect.width || 420
+  canvas.height = H = rect.height || 600
+}
+window.addEventListener('resize', resize)
+
+// в•ђв•ђ GAME STATE в•ђв•ђ
+let gameRunning = false
+let gameOver = false
+let distance = 0
+let highScore = parseInt(localStorage.getItem(BEST_KEY) || '0')
+let lastScore = 0
+let speed = 3
+let groundY = 0
+let obstacles = []
+let stars = []
+let animId = null
+let frameCount = 0
+let player, particles
+
+const GRAVITY = 0.5
+const JUMP_FORCE = -10
+const GROUND_HEIGHT = 50
+
+function initStars() {
+  stars = []
+  for (let i = 0; i < 60; i++) {
+    stars.push({ x: Math.random()*W, y: Math.random()*H*0.7, r: Math.random()*1.5+0.3, s: Math.random()*0.5+0.2, o: Math.random() })
+  }
+}
+
+function resetPlayer() {
+  player = { x: 80, y: H - GROUND_HEIGHT - 30, w: 20, h: 30, vy: 0, grounded: true }
+  particles = []
+}
+
+// в•ђв•ђ OBSTACLES в•ђв•ђ
+function spawnObstacle() {
+  const type = Math.floor(Math.random() * 5)
+  let w, h, flying
+  if (type === 0) { w = 14 + Math.random() * 14; h = 16 + Math.random() * 10; flying = false }       // rock
+  else if (type === 1) { w = 24 + Math.random() * 10; h = 10 + Math.random() * 6; flying = false }    // crater
+  else if (type === 2) { w = 8 + Math.random() * 8; h = 18 + Math.random() * 10; flying = false }     // alien plant
+  else if (type === 3) { w = 12 + Math.random() * 8; h = 12 + Math.random() * 8; flying = true }      // flying saucer
+  else { w = 20 + Math.random() * 12; h = 8 + Math.random() * 4; flying = false }                      // low barrier
+  const yPos = flying ? H - GROUND_HEIGHT - h - 40 - Math.random() * 30 : H - GROUND_HEIGHT - h
+  obstacles.push({
+    x: W + 10, y: yPos,
+    w, h, type, flying,
+    passed: false,
+    wobble: flying ? Math.random() * 0.03 + 0.02 : 0,
+    phase: Math.random() * Math.PI * 2
+  })
+}
+
+// в•ђв•ђ PLAYER в•ђв•ђ
+function drawPlayer() {
+  const x = player.x, y = player.y
+  ctx.save()
+  // body
+  ctx.fillStyle = '#7c3aed'
+  ctx.beginPath()
+  ctx.roundRect(x - player.w/2, y - player.h, player.w, player.h, 4)
+  ctx.fill()
+  // helmet
+  ctx.fillStyle = '#a855f7'
+  ctx.beginPath()
+  ctx.arc(x, y - player.h - 4, 10, 0, Math.PI*2)
+  ctx.fill()
+  // visor
+  ctx.fillStyle = '#38bdf8'
+  ctx.beginPath()
+  ctx.arc(x + 2, y - player.h - 4, 5, 0, Math.PI*2)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255,255,255,.3)'
+  ctx.beginPath()
+  ctx.arc(x + 3, y - player.h - 6, 2, 0, Math.PI*2)
+  ctx.fill()
+  // legs
+  const legAnim = gameRunning && !gameOver ? Math.sin(frameCount * 0.3) * 4 : 0
+  ctx.fillStyle = '#4c1d95'
+  ctx.fillRect(x - 6, y - 8, 5, 8 + legAnim)
+  ctx.fillRect(x + 1, y - 8, 5, 8 - legAnim)
+  // trail
+  if (player.grounded && !gameOver) {
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = `rgba(168,85,247,${0.1 - i*0.03})`
+      ctx.beginPath()
+      ctx.arc(x - 6 - i*5, y - 2 + Math.random()*4, 2, 0, Math.PI*2)
+      ctx.fill()
+    }
+  }
+  ctx.restore()
+}
+
+// в•ђв•ђ OBSTACLE DRAW в•ђв•ђ
+function drawObstacle(o) {
+  ctx.save()
+  const x = o.x, y = o.y
+  if (o.type === 0) {
+    // rock
+    ctx.fillStyle = '#3a3a3a'
+    ctx.beginPath()
+    ctx.moveTo(x - o.w/2, y + o.h)
+    ctx.lineTo(x - o.w/2 - 3, y + o.h - 4)
+    ctx.lineTo(x - o.w/2 + 2, y + 4)
+    ctx.lineTo(x, y)
+    ctx.lineTo(x + o.w/2 - 2, y + 4)
+    ctx.lineTo(x + o.w/2 + 3, y + o.h - 4)
+    ctx.lineTo(x + o.w/2, y + o.h)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = '#2a2a2a'
+    ctx.beginPath()
+    ctx.arc(x - 2, y + 6, 3, 0, Math.PI*2)
+    ctx.fill()
+  } else if (o.type === 1) {
+    // crater
+    ctx.fillStyle = '#1a1a2a'
+    ctx.beginPath()
+    ctx.ellipse(x, y + o.h/2, o.w/2, o.h/4, 0, 0, Math.PI*2)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(255,255,255,.05)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.ellipse(x, y + o.h/2, o.w/2 + 1, o.h/4 + 1, 0, 0, Math.PI*2)
+    ctx.stroke()
+  } else if (o.type === 2) {
+    // alien plant
+    ctx.fillStyle = '#059669'
+    ctx.beginPath()
+    ctx.moveTo(x, y + o.h)
+    ctx.lineTo(x - 3, y + o.h - 6)
+    ctx.lineTo(x - 1, y + o.h - 4)
+    ctx.lineTo(x - 2, y)
+    ctx.lineTo(x + 2, y)
+    ctx.lineTo(x + 1, y + o.h - 4)
+    ctx.lineTo(x + 3, y + o.h - 6)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = '#10b981'
+    ctx.beginPath()
+    ctx.arc(x, y + 2, 3, 0, Math.PI*2)
+    ctx.fill()
+  } else if (o.type === 3) {
+    // flying saucer
+    const bob = Math.sin(Date.now() * o.wobble + o.phase) * 4
+    ctx.fillStyle = '#475569'
+    ctx.beginPath()
+    ctx.ellipse(x, y + o.h/2 + bob, o.w/2, o.h/3, 0, 0, Math.PI*2)
+    ctx.fill()
+    ctx.fillStyle = '#64748b'
+    ctx.beginPath()
+    ctx.ellipse(x, y + o.h/2 + bob - 2, o.w/3, o.h/4, 0, 0, Math.PI*2)
+    ctx.fill()
+    ctx.fillStyle = '#94a3b8'
+    ctx.beginPath()
+    ctx.arc(x, y + o.h/2 + bob - 4, 3, 0, Math.PI*2)
+    ctx.fill()
+    ctx.fillStyle = 'rgba(56,189,248,.3)'
+    ctx.beginPath()
+    ctx.arc(x, y + o.h/2 + bob + 4, 4, 0, Math.PI*2)
+    ctx.fill()
+  } else {
+    // low barrier
+    ctx.fillStyle = '#b45309'
+    ctx.fillRect(x - o.w/2, y, o.w, o.h)
+    ctx.fillStyle = '#d97706'
+    for (let i = 0; i < 3; i++) {
+      ctx.fillRect(x - o.w/2 + 2 + i * 6, y - 2, 3, 4)
+    }
+  }
+  ctx.restore()
+}
+
+// в•ђв•ђ PARTICLES в•ђв•ђ
+function spawnDust() {
+  if (!player.grounded) return
+  for (let i = 0; i < 2; i++) {
+    particles.push({
+      x: player.x - 6 + Math.random()*4,
+      y: H - GROUND_HEIGHT - 2,
+      vx: -Math.random()*1.5 - 0.5, vy: -Math.random()*1,
+      life: 1, decay: 0.04 + Math.random()*0.03, r: 1 + Math.random()*2,
+      color: 'rgba(100,80,120,0.4)'
+    })
+  }
+}
+
+// в•ђв•ђ COLLISION в•ђв•ђ
+function checkCollision(o) {
+  const px = player.x, py = player.y - player.h/2
+  const pw = player.w/2 - 2, ph = player.h/2 - 2
+  const bob = o.flying ? Math.sin(Date.now() * o.wobble + o.phase) * 4 : 0
+  const ox = o.x, oy = o.y + o.h/2 + bob, ow = o.w/2 - 2, oh = o.h/2 - 2
+  const cx = Math.max(px - pw, Math.min(ox, px + pw))
+  const cy = Math.max(py - ph, Math.min(oy, py + ph))
+  const dx = ox - cx, dy = oy - cy
+  return dx * dx + dy * dy < (ow * ow + oh * oh) * 0.5
+}
+
+// в•ђв•ђ GAME LOOP в•ђв•ђ
+function update() {
+  if (!gameRunning || gameOver) return
+  frameCount++
+  // speed increases every second
+  const secs = frameCount / 60
+  speed = 3 + secs * 0.12
+  // player physics
+  player.vy += GRAVITY
+  player.y += player.vy
+  if (player.y >= H - GROUND_HEIGHT - player.h/2) {
+    player.y = H - GROUND_HEIGHT - player.h/2
+    player.vy = 0
+    player.grounded = true
+  } else {
+    player.grounded = false
+  }
+  spawnDust()
+  // obstacles
+  const spawnRate = Math.max(60 - secs * 0.8, 20)
+  if (frameCount % Math.floor(spawnRate) === 0 && obstacles.length < 5) {
+    spawnObstacle()
+  }
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i]
+    o.x -= speed
+    if (o.x < -50) { obstacles.splice(i, 1); continue }
+    if (!o.passed && o.x + o.w/2 < player.x - player.w/2) {
+      o.passed = true
+    }
+    if (checkCollision(o)) {
+      for (let j = 0; j < 20; j++) {
+        particles.push({
+          x: player.x + (Math.random()-0.5)*20,
+          y: player.y + (Math.random()-0.5)*20,
+          vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5 - 2,
+          life: 1, decay: 0.02 + Math.random()*0.03, r: 2 + Math.random()*3,
+          color: `hsl(${270+Math.random()*30},100%,${50+Math.random()*30}%)`
+        })
+      }
+      endGame()
+      return
+    }
+  }
+  // particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]
+    p.x += p.vx; p.y += p.vy
+    p.life -= p.decay
+    if (p.life <= 0) { particles.splice(i, 1); continue }
+  }
+  // distance
+  distance += speed * 0.01
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H)
+  // bg gradient
+  const grd = ctx.createRadialGradient(W/2, H*0.3, 0, W/2, H*0.3, W*0.8)
+  grd.addColorStop(0, 'rgba(20,10,40,1)')
+  grd.addColorStop(1, '#03010a')
+  ctx.fillStyle = grd
+  ctx.fillRect(0, 0, W, H)
+  // stars
+  const t = Date.now() / 1000
+  stars.forEach(s => {
+    const alpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.s + s.o))
+    ctx.fillStyle = `rgba(255,255,255,${alpha*0.5})`
+    ctx.beginPath()
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2)
+    ctx.fill()
+  })
+  // mountains (parallax)
+  const offset = (distance * 2) % (W * 2)
+  ctx.fillStyle = 'rgba(30,20,50,0.3)'
+  ctx.beginPath()
+  ctx.moveTo(0, H - GROUND_HEIGHT)
+  for (let x = 0; x <= W; x += 4) {
+    const mh = Math.sin((x + offset) * 0.005) * 40 + Math.sin((x + offset) * 0.012) * 20 + 60
+    ctx.lineTo(x, H - GROUND_HEIGHT - mh)
+  }
+  ctx.lineTo(W, H - GROUND_HEIGHT)
+  ctx.closePath()
+  ctx.fill()
+  // ground
+  const grd2 = ctx.createLinearGradient(0, H - GROUND_HEIGHT, 0, H)
+  grd2.addColorStop(0, '#1e1b2e')
+  grd2.addColorStop(0.3, '#151220')
+  grd2.addColorStop(1, '#0d0a16')
+  ctx.fillStyle = grd2
+  ctx.fillRect(0, H - GROUND_HEIGHT, W, GROUND_HEIGHT)
+  // ground surface line
+  ctx.strokeStyle = 'rgba(168,85,247,.15)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(0, H - GROUND_HEIGHT)
+  for (let x = 0; x <= W; x += 2) {
+    const sy = Math.sin((x + offset * 0.5) * 0.05) * 1.5
+    ctx.lineTo(x, H - GROUND_HEIGHT + sy)
+  }
+  ctx.stroke()
+  // obstacles
+  obstacles.forEach(drawObstacle)
+  // particles
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life
+    ctx.fillStyle = p.color
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2)
+    ctx.fill()
+  })
+  ctx.globalAlpha = 1
+  // player
+  drawPlayer()
+  // distance HUD
+  const dist = Math.floor(distance)
+  document.getElementById('distanceDisplay').textContent = dist
+  document.getElementById('bestDisplay').textContent = highScore
+}
+
+function loop() {
+  update()
+  draw()
+  animId = requestAnimationFrame(loop)
+}
+
+// в•ђв•ђ GAME CONTROLS в•ђв•ђ
+function jump() {
+  if (!gameRunning || gameOver) return
+  if (player.grounded) {
+    player.vy = JUMP_FORCE
+    player.grounded = false
+    for (let i = 0; i < 6; i++) {
+      particles.push({
+        x: player.x + (Math.random()-0.5)*10,
+        y: H - GROUND_HEIGHT,
+        vx: (Math.random()-0.5)*2, vy: -Math.random()*2 - 1,
+        life: 1, decay: 0.04, r: 1 + Math.random()*2,
+        color: 'rgba(168,85,247,0.5)'
+      })
+    }
+  }
+}
+
+function startGame() {
+  gameOver = false
+  gameRunning = true
+  distance = 0
+  obstacles = []
+  particles = []
+  speed = 3
+  frameCount = 0
+  resetPlayer()
+  document.getElementById('gameOver').classList.remove('show')
+  if (!animId) loop()
+}
+
+function endGame() {
+  gameOver = true
+  gameRunning = false
+  const dist = Math.floor(distance)
+  if (dist > highScore) { highScore = dist; localStorage.setItem(BEST_KEY, String(highScore)) }
+  lastScore = dist
+  document.getElementById('finalScore').textContent = dist + ' Рј'
+  document.getElementById('lastScoreDisplay').textContent = 'РїСЂРѕС€Р»С‹Р№: ' + (lastScore || '-') + ' Рј'
+  document.getElementById('gameOver').classList.add('show')
+  updateBestDisplay()
+  if (token) {
+    apiCall('/api/save', {game:'space-runner', data:{highScore, lastScore}})
+  }
+}
+
+function updateBestDisplay() {
+  document.getElementById('bestDisplay').textContent = highScore
+}
+
+// в•ђв•ђ INPUT в•ђв•ђ
+document.addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    e.preventDefault()
+    jump()
+  }
+})
+
+canvas.addEventListener('touchstart', e => { e.preventDefault(); jump() }, {passive:false})
+canvas.addEventListener('click', jump)
+
+// в•ђв•ђ OVERLAY в•ђв•ђ
+async function loadProgress() {
+  if (!token) return
+  try {
+    const r = await fetch(API + '/api/load?game=space-runner', {headers:{'Authorization':'Bearer '+token}})
+    const res = await r.json()
+    if (res.ok && res.data != null) {
+      if (res.data.highScore) highScore = res.data.highScore
+      if (res.data.lastScore) lastScore = res.data.lastScore
+      localStorage.setItem(BEST_KEY, String(highScore))
+    }
+  } catch(e) {}
+  updateBestDisplay()
+}
+
+// в•ђв•ђ AUTH HANDLERS в•ђв•ђ
+document.getElementById('authSubmit').onclick = async () => {
+  hideAuthError()
+  const email = document.getElementById('authEmail').value.trim().toLowerCase()
+  if (!email) { showAuthError('Р’РІРµРґРёС‚Рµ email'); return }
+  const ep = isRegister ? '/api/register' : '/api/login'
+  const res = await apiCall(ep, {email})
+  if (res.error) { showAuthError(res.error); return }
+  token = res.token; userEmail = res.email
+  userNick = res.nickname || ''; userAvatar = res.avatar || ''
+  localStorage.setItem(AKEY+'Token', token)
+  localStorage.setItem(AKEY+'Email', userEmail)
+  localStorage.setItem(AKEY+'Nick', userNick)
+  localStorage.setItem(AKEY+'Avatar', userAvatar)
+  saveEmail(userEmail)
+  document.getElementById('authModal').classList.remove('show')
+  document.getElementById('authEmail').value = ''
+  updateUI()
+  loadProgress()
+}
+document.getElementById('authSwitch').onclick = () => {
+  isRegister = !isRegister
+  document.getElementById('authTitle').textContent = isRegister ? 'вњ¦ Р РµРіРёСЃС‚СЂР°С†РёСЏ' : 'вњ¦ Р’С…РѕРґ'
+  document.getElementById('authSubmit').textContent = isRegister ? 'Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ' : 'Р’РѕР№С‚Рё'
+  document.getElementById('authSwitch').textContent = isRegister ? 'РЈР¶Рµ РµСЃС‚СЊ Р°РєРєР°СѓРЅС‚? Р’РѕР№С‚Рё' : 'РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ'
+  hideAuthError()
+}
+
+// в•ђв•ђ PROFILE в•ђв•ђ
+document.getElementById('profileBtn').onclick = () => {
+  selectedAvatar = userAvatar || 'рџЏѓ'
+  document.getElementById('profEmail').textContent = userEmail
+  document.getElementById('profNick').value = userNick || ''
+  setAvatarPreview(selectedAvatar, selectedAvatar.startsWith('data:'))
+  document.getElementById('profGrid').style.display = 'none'
+  document.getElementById('profModal').classList.add('show')
+}
+document.getElementById('profBack').onclick = () => document.getElementById('profModal').classList.remove('show')
+document.getElementById('profSave').onclick = async () => {
+  const nick = document.getElementById('profNick').value.trim().slice(0, 15)
+  const res = await apiCall('/api/profile', {nickname: nick, avatar: selectedAvatar}, 'PUT')
+  if (res.ok) {
+    userNick = res.nickname; userAvatar = res.avatar
+    localStorage.setItem(AKEY+'Nick', userNick); localStorage.setItem(AKEY+'Avatar', userAvatar)
+    updateUI()
+    const btn = document.getElementById('profSave')
+    const orig = btn.textContent; btn.textContent = 'вњ“ РЎРѕС…СЂР°РЅРµРЅРѕ'; btn.style.opacity = '.6'
+    setTimeout(() => { btn.textContent = orig; btn.style.opacity = '1' }, 1200)
+  }
+}
+document.getElementById('profLogout').onclick = () => {
+  token = ''; userEmail = ''; userNick = ''; userAvatar = ''
+  localStorage.removeItem(AKEY+'Token'); localStorage.removeItem(AKEY+'Email')
+  localStorage.removeItem(AKEY+'Nick'); localStorage.removeItem(AKEY+'Avatar')
+  document.getElementById('profModal').classList.remove('show')
+  updateUI()
+  document.getElementById('authModal').classList.add('show')
+}
+document.getElementById('profPhotoBtn').onclick = () => document.getElementById('profFileInput').click()
+document.getElementById('profFileInput').onchange = function(e) {
+  const file = e.target.files[0]; if (!file) return
+  const reader = new FileReader()
+  reader.onload = function(ev) {
+    const img = new Image()
+    img.onload = function() {
+      const canvas = document.createElement('canvas'); const size = 150
+      canvas.width = size; canvas.height = size
+      const ctx = canvas.getContext('2d'); const s = Math.min(img.width, img.height)
+      ctx.drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, size, size)
+      selectedAvatar = canvas.toDataURL('image/jpeg', 0.7)
+      setAvatarPreview(selectedAvatar, true)
+      document.getElementById('profGrid').style.display = 'none'
+    }; img.src = ev.target.result
+  }; reader.readAsDataURL(file)
+}
+document.getElementById('profEmojiBtn').onclick = () => {
+  const grid = document.getElementById('profGrid'); grid.style.display = 'grid'
+  selectedAvatar = 'рџЏѓ'
+  setAvatarPreview('рџЏѓ', false)
+  document.getElementById('profAvatar').style.background = getColor(userEmail)
+  grid.innerHTML = AVATARS.map(a => '<div class="prof-em'+(a===selectedAvatar?' active':'')+'" data-a="'+a+'">'+a+'</div>').join('')
+  grid.querySelectorAll('.prof-em').forEach(el => {
+    el.onclick = () => { selectedAvatar = el.dataset.a; setAvatarPreview(el.dataset.a, false); document.getElementById('profAvatar').style.background = getColor(userEmail); document.getElementById('profGrid').style.display = 'none' }
+  })
+}
+
+// в•ђв•ђ CANVAS POLYFILL в•ђв•ђ
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (r > w/2) r = w/2; if (r > h/2) r = h/2
+    this.moveTo(x + r, y)
+    this.lineTo(x + w - r, y)
+    this.quadraticCurveTo(x + w, y, x + w, y + r)
+    this.lineTo(x + w, y + h - r)
+    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    this.lineTo(x + r, y + h)
+    this.quadraticCurveTo(x, y + h, x, y + h - r)
+    this.lineTo(x, y + r)
+    this.quadraticCurveTo(x, y, x + r, y)
+    this.closePath()
+  }
+}
+
+// в•ђв•ђ INIT в•ђв•ђ
+loadEmails()
+resize()
+initStars()
+resetPlayer()
+updateBestDisplay()
+if (!token) {
+  startGame()
+} else {
+  updateUI()
+  loadProgress()
+  startGame()
+}
+</script>
+</body>
+</html>
