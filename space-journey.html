@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>вњ¦ Space Journey</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&family=Orbitron:wght@700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#03010a;color:#fff;font-family:'Inter',sans-serif}
+#app{width:100%;max-width:420px;height:100vh;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;position:relative;transition:background 2s}
+
+/* в”Ђв”Ђ space background в”Ђв”Ђ */
+#space-bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;animation:twinkle var(--d) ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:.15;transform:scale(.8)}100%{opacity:1;transform:scale(1.2)}}
+.star-blue{background:#6ba4ff}
+.star-white{background:#fff}
+.star-yellow{background:#ffe08a}
+.star-red{background:#ff6b6b}
+.nebula-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.08;animation:drifting var(--d) ease-in-out infinite alternate}
+@keyframes drifting{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,-30px) scale(1.1)}}
+.bg-glow{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;border-radius:50%;pointer-events:none;z-index:0;transition:all 2s;opacity:.08}
+
+/* в”Ђв”Ђ warp overlay в”Ђв”Ђ */
+.warp-overlay{position:fixed;inset:0;z-index:100;pointer-events:none;opacity:0;transition:opacity .6s;background:#03010a}
+.warp-overlay.active{opacity:1}
+.warp-stars{position:absolute;inset:0;overflow:hidden}
+.warp-line{position:absolute;height:2px;background:linear-gradient(90deg,transparent,var(--c,rgba(168,85,247,.8)),transparent);animation:warpLine .5s linear infinite;border-radius:2px}
+@keyframes warpLine{0%{transform:translateX(-100%)}100%{transform:translateX(100vw)}}
+.warp-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border-radius:50%;border:2px solid rgba(168,85,247,.3);animation:warpRingExpand 1.5s ease-out forwards}
+@keyframes warpRingExpand{0%{width:50px;height:50px;opacity:1;border-width:3px}100%{width:600px;height:600px;opacity:0;border-width:0.5px}}
+
+/* в”Ђв”Ђ HEADER в”Ђв”Ђ */
+.header{position:relative;z-index:10;padding:10px 16px 4px;flex-shrink:0}
+.coin-row{display:flex;align-items:center;gap:8px;margin-bottom:1px}
+.coin-icon{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ffd700,#ff8c00);display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 0 12px rgba(255,215,0,.3);flex-shrink:0}
+.coin-count{font-size:24px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,#fff,#c8baff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub-stats{display:flex;gap:10px;font-size:10px;color:rgba(200,190,255,.35);font-weight:600;margin-bottom:2px;letter-spacing:.2px}
+
+/* planet indicator */
+.planet-strip{display:flex;align-items:center;gap:6px;padding:1px 0 2px;font-size:10px;color:rgba(255,255,255,.3);font-weight:500;letter-spacing:.2px}
+.planet-dot{width:6px;height:6px;border-radius:50%;display:inline-block;box-shadow:0 0 6px currentColor}
+.planet-strip .mult-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--pc)}
+
+/* xp bar */
+.xp-wrap{position:relative;height:10px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden;margin-top:1px}
+.xp-fill{height:100%;border-radius:6px;transition:width .4s ease;position:relative}
+.xp-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15));border-radius:6px}
+.xp-label{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:7px;font-weight:700;line-height:10px;color:rgba(255,255,255,.5);letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.5);font-family:'Orbitron',sans-serif}
+
+/* в”Ђв”Ђ GAME AREA в”Ђв”Ђ */
+.game-area{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:0 16px;gap:1px}
+
+/* в”Ђв”Ђ ROCKET в”Ђв”Ђ */
+.rocket-wrap{position:relative;cursor:pointer;margin:0;transition:transform .5s;padding:0 10px}
+.rocket-wrap.flying{animation:flyAway 1.8s ease-in forwards}
+@keyframes flyAway{0%{transform:translateY(0) scale(1);opacity:1}40%{transform:translateY(-120px) scale(.85);opacity:.9}100%{transform:translateY(-500px) scale(.2);opacity:0}}
+
+.rocket{width:120px;height:175px;position:relative;transition:transform .08s;filter:drop-shadow(0 0 40px rgba(168,85,247,.12))}
+.rocket svg{width:100%;height:100%;display:block}
+
+/* в”Ђв”Ђ FLAME (kept separate for animation) в”Ђв”Ђ */
+.flame-container{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:0;width:24px}
+.flame-outer{width:22px;height:50px;background:radial-gradient(ellipse at center bottom,rgba(255,255,200,.95) 0%,rgba(255,200,50,.8) 20%,rgba(255,100,0,.6) 45%,rgba(255,50,0,.3) 70%,transparent 100%);border-radius:0 0 50% 50%;animation:flameOuter .08s ease-in-out infinite alternate;transform-origin:top center;filter:blur(1.5px)}
+.flame-inner{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:10px;height:30px;background:linear-gradient(180deg,rgba(255,255,255,.98) 0%,rgba(255,255,200,.9) 20%,rgba(255,200,50,.7) 50%,rgba(255,100,0,.3) 100%);border-radius:0 0 50% 50%;animation:flameInner .06s ease-in-out infinite alternate-reverse;filter:blur(.5px)}
+.flame-glow{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,180,50,.15);filter:blur(15px);animation:flameGlow .12s ease-in-out infinite alternate}
+@keyframes flameOuter{0%{height:45px;opacity:.7;transform:translateX(-50%) scaleX(.9)}100%{height:55px;opacity:1;transform:translateX(-50%) scaleX(1.1)}}
+@keyframes flameInner{0%{height:25px;opacity:.8;transform:translateX(-50%) scaleX(.8)}100%{height:35px;opacity:1;transform:translateX(-50%) scaleX(1)}}
+@keyframes flameGlow{0%{opacity:.2;transform:translateX(-50%) scale(1)}100%{opacity:.4;transform:translateX(-50%) scale(1.3)}}
+
+/* smoke */
+.smoke-particle{position:fixed;pointer-events:none;border-radius:50%;z-index:50;animation:smokeRise var(--d) ease-out forwards}
+@keyframes smokeRise{0%{opacity:.5;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(2.5)}}
+
+/* tap particles */
+.tap-particle{position:fixed;pointer-events:none;border-radius:50%;animation:particleBurst .7s ease-out forwards;z-index:50}
+@keyframes particleBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
+
+/* в”Ђв”Ђ COMBO в”Ђв”Ђ */
+.combo-indicator{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:18px;font-weight:900;font-family:'Orbitron',sans-serif;opacity:0;transition:all .3s;text-shadow:0 0 20px rgba(255,107,53,.5);white-space:nowrap;z-index:15}
+.combo-indicator.show{opacity:1;top:-28px}
+
+/* в”Ђв”Ђ FUEL GAUGE в”Ђв”Ђ */
+.fuel-wrap{width:100%;max-width:280px;margin:1px auto}
+.fuel-label{display:flex;justify-content:space-between;font-size:10px;color:rgba(200,190,255,.35);font-weight:600;margin-bottom:1px;letter-spacing:.3px}
+.fuel-track{height:6px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}
+.fuel-fill{height:100%;border-radius:4px;transition:width .3s ease;position:relative}
+
+/* в”Ђв”Ђ DISTANCE / DESTINATION в”Ђв”Ђ */
+.dest-wrap{width:100%;max-width:280px;margin:1px auto}
+.dest-label{display:flex;justify-content:space-between;font-size:9px;color:rgba(200,190,255,.25);font-weight:500;margin-bottom:1px}
+.dest-track{height:3px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}
+.dest-fill{height:100%;border-radius:4px;transition:width .3s ease;background:linear-gradient(90deg,var(--fc1,#a855f7),var(--fc2,#f472b6))}
+
+/* в”Ђв”Ђ LAUNCH в”Ђв”Ђ */
+.launch-btn-wrap{position:relative;z-index:10;text-align:center;margin:1px 0 0}
+.launch-btn{display:none;padding:6px 28px;border-radius:50px;border:none;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1.5px;color:#fff;box-shadow:0 0 30px rgba(168,85,247,.2),0 4px 15px rgba(0,0,0,.3);transition:all .3s;animation:glowPulse 1.8s ease-in-out infinite;position:relative;overflow:hidden}
+.launch-btn.show{display:inline-block}
+.launch-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.1),transparent);animation:btnSweep 2s ease-in-out infinite}
+@keyframes btnSweep{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(100%)}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px var(--gs,rgba(168,85,247,.2)),0 4px 15px rgba(0,0,0,.3)}50%{box-shadow:0 0 45px var(--gs,rgba(168,85,247,.5)),0 4px 15px rgba(0,0,0,.3)}}
+
+/* в”Ђв”Ђ FLOAT TEXT в”Ђв”Ђ */
+.float-text{position:fixed;pointer-events:none;font-weight:900;font-size:18px;z-index:60;animation:floatRise 1.2s ease-out forwards}
+@keyframes floatRise{0%{opacity:1;transform:translateY(0) scale(.8)}30%{opacity:1;transform:translateY(-15px) scale(1.1)}100%{opacity:0;transform:translateY(-50px) scale(1)}}
+
+/* в”Ђв”Ђ NAV в”Ђв”Ђ */
+.nav{z-index:20;background:rgba(8,4,25,.98);backdrop-filter:blur(20px);border-top:1px solid rgba(168,85,247,.08);display:flex;padding:5px 0 env(safe-area-inset-bottom,5px);flex-shrink:0}
+  .game-back{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:rgba(255,255,255,.5);transition:all .15s;background:rgba(255,255,255,.06);flex-shrink:0}
+  .game-back:active{background:rgba(255,255,255,.1);transform:scale(.9)}
+  .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px;cursor:pointer;border:none;background:none;color:rgba(200,190,255,.2);font-family:'Inter',sans-serif;transition:all .3s;position:relative}
+.nav-btn.active{color:#a855f7}
+.nav-btn.active::before{content:'';position:absolute;top:-5px;left:35%;right:35%;height:2px;border-radius:2px;background:#a855f7}
+.nav-icon{font-size:18px;line-height:1}
+.nav-label{font-size:9px;font-weight:500;letter-spacing:.2px}
+
+/* в”Ђв”Ђ SHOP в”Ђв”Ђ */
+.shop-view{z-index:8;background:rgba(5,2,18,.98);display:none;flex-direction:column;padding:10px 14px 10px;overflow-y:auto;flex:1}
+.shop-view.show{display:flex}
+.shop-header{display:flex;align-items:center;gap:8px;padding:2px 0 10px;position:sticky;top:0;z-index:2;background:rgba(5,2,18,.98)}
+.shop-header .coin-count{font-size:20px}
+.shop-grid{display:flex;flex-direction:column;gap:6px}
+.shop-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;transition:all .2s;cursor:pointer}
+.shop-item:active{transform:scale(.97)}
+.shop-item.can-buy{border-color:rgba(50,230,160,.15);background:rgba(50,230,160,.03)}
+.shop-icon{font-size:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(168,85,247,.08);border-radius:8px;flex-shrink:0}
+.shop-info{flex:1;min-width:0}
+.shop-name{font-size:12px;font-weight:700}
+.shop-desc{font-size:9px;color:rgba(200,190,255,.3)}
+.shop-right{text-align:right;flex-shrink:0}
+.shop-level{font-size:9px;color:rgba(200,190,255,.2)}
+.shop-btn{padding:4px 12px;border-radius:6px;border:none;font-family:'Inter',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,#32e6a0,#1abc7a);color:#fff}
+.shop-btn.cant{background:rgba(255,255,255,.05);color:rgba(255,255,255,.12)}
+
+/* в”Ђв”Ђ STATS в”Ђв”Ђ */
+.stats-view{z-index:8;background:rgba(5,2,18,.98);display:none;flex-direction:column;padding:10px 14px 10px;overflow-y:auto;flex:1}
+.stats-view.show{display:flex}
+.stats-header{font-size:16px;font-weight:900;padding:2px 0 10px;text-align:center;font-family:'Orbitron',sans-serif;letter-spacing:1px;background:linear-gradient(135deg,#c084fc,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px}
+.stat-label{font-size:11px;color:rgba(200,190,255,.35);font-weight:500}
+.stat-value{font-size:13px;font-weight:700}
+
+/* в”Ђв”Ђ TOAST в”Ђв”Ђ */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);z-index:200;padding:8px 22px;background:rgba(8,3,25,.92);border:1px solid rgba(168,85,247,.15);border-radius:12px;font-weight:700;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;backdrop-filter:blur(10px)}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* в”Ђв”Ђ COUNTDOWN в”Ђв”Ђ */
+.countdown-overlay{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;pointer-events:none}
+.countdown-overlay.show{display:flex}
+.countdown-num{font-family:'Orbitron',sans-serif;font-size:120px;font-weight:900;color:#fff;text-shadow:0 0 60px rgba(168,85,247,.5),0 0 120px rgba(168,85,247,.3);animation:countPop .8s ease-out forwards;opacity:0}
+@keyframes countPop{0%{opacity:0;transform:scale(2)}30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.8)}}
+.start-overlay{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;background:rgba(3,1,10,.9);backdrop-filter:blur(8px)}
+.start-overlay.show{display:flex}
+.start-box{background:#0d0a1a;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:32px 28px;width:300px;max-width:85vw;text-align:center}
+.start-icon{font-size:48px;margin-bottom:8px}
+.start-title{font-size:18px;font-weight:900;margin-bottom:4px}
+.start-sub{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:24px}
+.start-btn{width:100%;padding:14px;border-radius:14px;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-bottom:10px}
+.start-btn:active{transform:scale(.97)}
+.start-btn-primary{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff}
+.start-btn-secondary{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5)}
+</style>
+</head>
+<body>
+
+<div id="space-bg"></div>
+<div class="bg-glow" id="bgGlow"></div>
+<div class="warp-overlay" id="warpOverlay"><div class="warp-stars"></div></div>
+<div class="countdown-overlay" id="countdownOverlay"><div class="countdown-num" id="countdownNum"></div></div>
+
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="game-back" onclick="history.back()">в†ђ</div>
+      <div class="coin-row" style="margin-bottom:0">
+        <div class="coin-icon">вњ¦</div>
+        <span class="coin-count" id="coinDisplay">0</span>
+      </div>
+    </div>
+    <div class="sub-stats">
+      <span>рџљЂ +<span id="tapPowerDisplay">1</span></span>
+      <span>рџ”Ґ <span id="comboDisplay">x1.0</span></span>
+      <span>рџЏ† Lv<span id="levelDisplay">1</span></span>
+    </div>
+    <div class="planet-strip">
+      <span class="planet-dot" id="planetDot"></span>
+      <span id="planetNameDisplay">рџЊЌ Earth</span>
+      <span style="color:rgba(255,255,255,.15)}">В·</span>
+      <span class="mult-badge" id="planetMultDisplay" style="--pc:#a855f7">x1</span>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-fill" id="xpFill" style="width:0%"></div>
+      <span class="xp-label" id="xpLabel">0/100</span>
+    </div>
+  </div>
+
+  <!-- Game -->
+  <div class="game-area">
+    <div class="rocket-wrap" id="rocketWrap">
+      <div class="rocket" id="rocket">
+        <svg viewBox="0 0 120 185" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#d8d4e2"/>
+              <stop offset="8%" stop-color="#f2eefa"/>
+              <stop offset="25%" stop-color="#eae6f2"/>
+              <stop offset="55%" stop-color="#d4d0e0"/>
+              <stop offset="80%" stop-color="#b8b4c8"/>
+              <stop offset="95%" stop-color="#9894a8"/>
+              <stop offset="100%" stop-color="#888498"/>
+            </linearGradient>
+            <linearGradient id="noseGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#991b1b"/>
+              <stop offset="10%" stop-color="#dc2626"/>
+              <stop offset="30%" stop-color="#ef4444"/>
+              <stop offset="50%" stop-color="#e53939"/>
+              <stop offset="75%" stop-color="#c62828"/>
+              <stop offset="90%" stop-color="#8f1a1a"/>
+              <stop offset="100%" stop-color="#6b1212"/>
+            </linearGradient>
+            <linearGradient id="noseShadow" x1="0.55" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="transparent"/>
+              <stop offset="100%" stop-color="rgba(0,0,0,.15)"/>
+            </linearGradient>
+            <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#b91c1c"/>
+              <stop offset="40%" stop-color="#ef4444"/>
+              <stop offset="70%" stop-color="#dc2626"/>
+              <stop offset="100%" stop-color="#7f1d1d"/>
+            </linearGradient>
+            <linearGradient id="engineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#1e293b"/>
+              <stop offset="20%" stop-color="#475569"/>
+              <stop offset="50%" stop-color="#64748b"/>
+              <stop offset="80%" stop-color="#334155"/>
+              <stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <radialGradient id="windowGrad" cx="30%" cy="30%">
+              <stop offset="0%" stop-color="#bae6fd"/>
+              <stop offset="30%" stop-color="#7dd3fc"/>
+              <stop offset="60%" stop-color="#38bdf8"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </radialGradient>
+            <linearGradient id="heatShield" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#1e1b2e"/>
+              <stop offset="30%" stop-color="#2d2a44"/>
+              <stop offset="70%" stop-color="#1e1b2e"/>
+              <stop offset="100%" stop-color="#12101e"/>
+            </linearGradient>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#8a8a9a"/>
+              <stop offset="30%" stop-color="#b8b4c8"/>
+              <stop offset="70%" stop-color="#7a7a8a"/>
+              <stop offset="100%" stop-color="#5a5a6a"/>
+            </linearGradient>
+            <linearGradient id="nozzleInner" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0f172a"/>
+              <stop offset="100%" stop-color="#020617"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Drop shadow -->
+          <ellipse cx="60" cy="168" rx="32" ry="6" fill="rgba(0,0,0,.12)" filter="url(#shadowBlur)"/>
+          <filter id="shadowBlur"><feGaussianBlur stdDeviation="3"/></filter>
+
+          <!-- в”Ђв”Ђ FINS в”Ђв”Ђ -->
+          <!-- Left fin (behind body) -->
+          <g>
+            <path d="M24,112 L6,150 L18,152 L32,119 Z" fill="url(#finGrad)" stroke="#7f1d1d" stroke-width=".6"/>
+            <!-- Fin highlight -->
+            <path d="M24,112 L6,150 L10,151 L26,116 Z" fill="rgba(255,255,255,.08)"/>
+            <!-- Fin shadow edge -->
+            <path d="M18,152 L32,119 L30,119 L16,151 Z" fill="rgba(0,0,0,.1)"/>
+            <!-- Fin tip -->
+            <circle cx="6" cy="150" r="1.5" fill="#fca5a5" opacity=".5"/>
+          </g>
+
+          <!-- Right fin (behind body) -->
+          <g>
+            <path d="M96,112 L114,150 L102,152 L88,119 Z" fill="url(#finGrad)" stroke="#7f1d1d" stroke-width=".6"/>
+            <path d="M96,112 L114,150 L110,151 L94,116 Z" fill="rgba(255,0,0,.06)"/>
+            <path d="M102,152 L88,119 L90,119 L104,151 Z" fill="rgba(0,0,0,.1)"/>
+            <circle cx="114" cy="150" r="1.5" fill="#fca5a5" opacity=".5"/>
+          </g>
+
+          <!-- в”Ђв”Ђ MAIN BODY в”Ђв”Ђ -->
+          <!-- Body shadow base -->
+          <rect x="36" y="24" width="48" height="100" rx="24" fill="rgba(0,0,0,.06)" transform="translate(2,2)"/>
+          <!-- Main body -->
+          <rect x="35" y="24" width="50" height="100" rx="25" fill="url(#bodyGrad)" stroke="#a09cb0" stroke-width=".6"/>
+
+          <!-- Body highlight (left edge reflection) -->
+          <path d="M37,30 Q37,24 43,24 L50,24 Q44,24 44,30 L44,112 Q44,120 38,120 Z" fill="rgba(255,255,255,.2)"/>
+          <path d="M39,32 Q39,26 45,26 L48,26 Q44,26 44,32 L44,110 Q44,116 40,116 Z" fill="rgba(255,255,255,.1)"/>
+
+          <!-- Body shadow (right edge) -->
+          <rect x="75" y="30" width="8" height="90" rx="4" fill="rgba(0,0,0,.06)"/>
+          <rect x="78" y="35" width="3" height="80" rx="1.5" fill="rgba(0,0,0,.04)"/>
+
+          <!-- в”Ђв”Ђ PANEL LINES в”Ђв”Ђ -->
+          <g stroke="rgba(0,0,0,.04)" stroke-width=".4">
+            <line x1="40" y1="42" x2="80" y2="42"/>
+            <line x1="40" y1="46" x2="80" y2="46"/>
+            <line x1="40" y1="68" x2="80" y2="68"/>
+            <line x1="40" y1="72" x2="80" y2="72"/>
+            <line x1="40" y1="94" x2="80" y2="94"/>
+            <line x1="40" y1="98" x2="80" y2="98"/>
+            <line x1="40" y1="112" x2="80" y2="112"/>
+            <line x1="40" y1="116" x2="80" y2="116"/>
+          </g>
+
+          <!-- в”Ђв”Ђ RIVETS в”Ђв”Ђ -->
+          <g fill="rgba(0,0,0,.07)">
+            <!-- Top row -->
+            <circle cx="44" cy="44" r="1.2"/>
+            <circle cx="52" cy="44" r="1.2"/>
+            <circle cx="68" cy="44" r="1.2"/>
+            <circle cx="76" cy="44" r="1.2"/>
+            <!-- Bottom row -->
+            <circle cx="44" cy="114" r="1.2"/>
+            <circle cx="52" cy="114" r="1.2"/>
+            <circle cx="68" cy="114" r="1.2"/>
+            <circle cx="76" cy="114" r="1.2"/>
+            <!-- Middle panel -->
+            <circle cx="44" cy="70" r="1"/>
+            <circle cx="76" cy="70" r="1"/>
+            <circle cx="44" cy="96" r="1"/>
+            <circle cx="76" cy="96" r="1"/>
+          </g>
+          <!-- Rivet highlights -->
+          <g fill="rgba(255,255,255,.08)">
+            <circle cx="44" cy="43.5" r=".5"/>
+            <circle cx="52" cy="43.5" r=".5"/>
+            <circle cx="68" cy="43.5" r=".5"/>
+            <circle cx="76" cy="43.5" r=".5"/>
+            <circle cx="44" cy="113.5" r=".5"/>
+            <circle cx="76" cy="113.5" r=".5"/>
+          </g>
+
+          <!-- в”Ђв”Ђ DECAL STRIPE в”Ђв”Ђ -->
+          <rect x="40" y="75" width="40" height="3" rx="1.5" fill="rgba(168,85,247,.12)"/>
+          <rect x="42" y="76.5" width="36" height=".5" fill="rgba(168,85,247,.08)"/>
+          <rect x="40" y="88" width="40" height="3" rx="1.5" fill="rgba(168,85,247,.1)"/>
+
+          <!-- в”Ђв”Ђ NOSE CONE в”Ђв”Ђ -->
+          <!-- Nose base shadow -->
+          <path d="M35,26 C50,20 70,20 85,26" fill="none" stroke="rgba(0,0,0,.06)" stroke-width="1.5"/>
+          <!-- Nose cone -->
+          <path d="M35,26 C35,26 44,-6 60,-2 C76,-6 85,26 85,26 C70,20 50,20 35,26 Z" fill="url(#noseGrad)" stroke="#7f1d1d" stroke-width=".6"/>
+
+          <!-- Nose shadow (right side) -->
+          <path d="M60,-2 C76,-6 85,26 85,26 L82,25 C82,25 74,-3 60,0 Z" fill="url(#noseShadow)"/>
+
+          <!-- Nose highlight (left edge) -->
+          <path d="M37,24 C37,24 45,-3 56,-1 C56,-1 50,-1 37,24 Z" fill="rgba(255,255,255,.2)"/>
+          <path d="M39,22 C39,22 46,0 54,1 C54,1 50,0 39,22 Z" fill="rgba(255,255,255,.12)"/>
+
+          <!-- Nose tip -->
+          <ellipse cx="60" cy="-2" rx="2.5" ry="1.5" fill="#fca5a5" opacity=".5"/>
+          <circle cx="60" cy="-3" r="1.5" fill="rgba(255,255,255,.3)"/>
+
+          <!-- Separation line between nose and body -->
+          <path d="M35,26 Q50,20 85,26" fill="none" stroke="#a09cb0" stroke-width=".6"/>
+          <path d="M35,27 Q50,21 85,27" fill="none" stroke="rgba(255,255,255,.08)" stroke-width=".3"/>
+
+          <!-- в”Ђв”Ђ WINDOW в”Ђв”Ђ -->
+          <!-- Window shadow -->
+          <circle cx="60" cy="55" r="12" fill="rgba(0,0,0,.08)"/>
+          <!-- Window frame outer -->
+          <circle cx="60" cy="55" r="12" fill="url(#ringGrad)" stroke="#6a6a7a" stroke-width=".8"/>
+          <!-- Frame inner ring -->
+          <circle cx="60" cy="55" r="10.5" fill="#7a7a8a" stroke="#5a5a6a" stroke-width=".5"/>
+          <!-- Glass -->
+          <circle cx="60" cy="55" r="9.5" fill="url(#windowGrad)"/>
+          <!-- Glass inner glow -->
+          <circle cx="60" cy="55" r="9.5" fill="none" stroke="rgba(255,255,255,.08)" stroke-width=".5"/>
+          <!-- Primary reflection -->
+          <ellipse cx="56" cy="50" rx="3.5" ry="2.5" fill="rgba(255,255,255,.45)" transform="rotate(-15,56,50)"/>
+          <!-- Secondary reflection -->
+          <ellipse cx="55" cy="50" rx="1.5" ry="1" fill="rgba(255,255,255,.25)" transform="rotate(-15,55,50)"/>
+          <!-- Bottom reflection -->
+          <ellipse cx="64" cy="59" rx="2" ry="1" fill="rgba(255,255,255,.08)"/>
+          <!-- Frame bolts -->
+          <circle cx="60" cy="44" r=".8" fill="rgba(0,0,0,.1)"/>
+          <circle cx="60" cy="66" r=".8" fill="rgba(0,0,0,.1)"/>
+          <circle cx="49" cy="55" r=".8" fill="rgba(0,0,0,.1)"/>
+          <circle cx="71" cy="55" r=".8" fill="rgba(0,0,0,.1)"/>
+
+          <!-- в”Ђв”Ђ HEAT SHIELD (bottom) в”Ђв”Ђ -->
+          <path d="M37,120 L38,128 L82,128 L83,120 Z" fill="url(#heatShield)" stroke="#1e1b2e" stroke-width=".5"/>
+          <!-- Heat shield tiles -->
+          <g stroke="rgba(255,255,255,.03)" stroke-width=".3">
+            <line x1="42" y1="122" x2="78" y2="122"/>
+            <line x1="40" y1="125" x2="80" y2="125"/>
+            <line x1="52" y1="120" x2="52" y2="128"/>
+            <line x1="60" y1="120" x2="60" y2="128"/>
+            <line x1="68" y1="120" x2="68" y2="128"/>
+          </g>
+          <!-- Burn marks on shield -->
+          <rect x="52" y="124" width="16" height="4" rx="2" fill="rgba(0,0,0,.08)"/>
+          <rect x="56" y="126" width="8" height="2" rx="1" fill="rgba(0,0,0,.05)"/>
+
+          <!-- в”Ђв”Ђ ENGINE BELL в”Ђв”Ђ -->
+          <!-- Bell body -->
+          <path d="M50,128 L44,148 L76,148 L70,128 Z" fill="url(#engineGrad)" stroke="#0f172a" stroke-width=".6"/>
+          <!-- Bell inner -->
+          <path d="M52,130 L46,146 L74,146 L68,130 Z" fill="url(#nozzleInner)"/>
+          <!-- Bell highlight -->
+          <path d="M50,128 L52,130 L68,130 L70,128 Z" fill="rgba(255,255,255,.06)"/>
+          <!-- Bell rim highlight -->
+          <path d="M44,148 L46,147 L74,147 L76,148 Z" fill="rgba(255,255,255,.08)"/>
+          <!-- Bell shadow -->
+          <path d="M70,128 L76,148 L72,148 L66,130 Z" fill="rgba(0,0,0,.08)"/>
+
+          <!-- Nozzle flange -->
+          <rect x="48" y="126" width="24" height="3" rx="1" fill="#475569" stroke="#334155" stroke-width=".4"/>
+          <rect x="50" y="126" width="20" height="1" fill="rgba(255,255,255,.06)"/>
+
+          <!-- в”Ђв”Ђ ENGINE DETAILS в”Ђв”Ђ -->
+          <!-- Turbine blades visible inside nozzle -->
+          <g stroke="rgba(255,255,255,.04)" stroke-width=".3">
+            <line x1="60" y1="132" x2="50" y2="140"/>
+            <line x1="60" y1="132" x2="70" y2="140"/>
+            <line x1="60" y1="132" x2="60" y2="142"/>
+            <line x1="60" y1="132" x2="55" y2="141"/>
+            <line x1="60" y1="132" x2="65" y2="141"/>
+          </g>
+          <!-- Nozzle glow ring -->
+          <ellipse cx="60" cy="148" rx="16" ry="3" fill="none" stroke="rgba(255,200,50,.08)" stroke-width=".5"/>
+
+          <!-- в”Ђв”Ђ BODY BOTTOM EDGE в”Ђв”Ђ -->
+          <path d="M37,120 Q60,126 83,120" fill="none" stroke="#a09cb0" stroke-width=".4"/>
+          <path d="M38,121 Q60,125 82,121" fill="none" stroke="rgba(255,255,255,.06)" stroke-width=".3"/>
+
+          <!-- в”Ђв”Ђ EXTRA DETAILS в”Ђв”Ђ -->
+          <!-- Vent ports -->
+          <rect x="42" y="106" width="4" height="1.5" rx=".5" fill="rgba(0,0,0,.06)"/>
+          <rect x="74" y="106" width="4" height="1.5" rx=".5" fill="rgba(0,0,0,.06)"/>
+          <!-- Antenna (small) -->
+          <line x1="60" y1="-2" x2="60" y2="-7" stroke="#a09cb0" stroke-width=".8"/>
+          <circle cx="60" cy="-8" r="1.5" fill="#ef4444"/>
+          <circle cx="60" cy="-8" r=".8" fill="#fca5a5" opacity=".6"/>
+
+          <!-- Body wrap lines (horizontal) -->
+          <path d="M35,60 Q60,56 85,60" fill="none" stroke="rgba(0,0,0,.03)" stroke-width=".3"/>
+          <path d="M35,62 Q60,58 85,62" fill="none" stroke="rgba(255,255,255,.04)" stroke-width=".3"/>
+        </svg>
+        <div class="flame-container">
+          <div class="flame-glow"></div>
+          <div class="flame-outer"></div>
+          <div class="flame-inner"></div>
+        </div>
+      </div>
+      <div class="combo-indicator" id="comboIndicator">рџ”Ґ x1.0</div>
+    </div>
+
+    <div class="dest-wrap">
+      <div class="dest-label">
+        <span id="fromPlanet">рџЊЌ Earth</span>
+        <span id="toPlanet">в†’ рџЄђ Mars</span>
+      </div>
+      <div class="dest-track">
+        <div class="dest-fill" id="destFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="fuel-wrap">
+      <div class="fuel-label">
+        <span>в›Ѕ FUEL</span>
+        <span><span id="fuelDisplay">1500</span> / <span id="maxFuelDisplay">1500</span></span>
+      </div>
+      <div class="fuel-track">
+        <div class="fuel-fill" id="fuelFill" style="width:100%"></div>
+      </div>
+    </div>
+
+    <div class="launch-btn-wrap">
+      <button class="launch-btn" id="launchBtn">рџљЂ LAUNCH</button>
+    </div>
+  </div>
+
+  <!-- Shop / Stats / Nav -->
+  <div class="shop-view" id="shopView">
+    <div class="shop-header"><div class="coin-icon" style="width:24px;height:24px;font-size:11px">вњ¦</div><span class="coin-count" id="shopCoinDisplay">0</span></div>
+    <div class="shop-grid" id="shopGrid"></div>
+  </div>
+  <div class="stats-view" id="statsView">
+    <div class="stats-header">рџ“Љ DATA LOG</div>
+    <div id="statsContent"></div>
+  </div>
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-box">
+      <div class="start-icon">рџљЂ</div>
+      <div class="start-title">Space Journey</div>
+      <div class="start-sub">РќР°Р№РґРµРЅРѕ СЃРѕС…СЂР°РЅРµРЅРёРµ</div>
+      <button class="start-btn start-btn-primary" onclick="continueGame()">в–¶ РџСЂРѕРґРѕР»Р¶РёС‚СЊ</button>
+      <button class="start-btn start-btn-secondary" onclick="startNewGame()">рџ”„ РќРѕРІР°СЏ РёРіСЂР°</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <div class="nav">
+    <button class="nav-btn active" data-tab="tap"><span class="nav-icon">рџљЂ</span><span class="nav-label">Fly</span></button>
+    <button class="nav-btn" data-tab="shop"><span class="nav-icon">рџ›ё</span><span class="nav-label">Shop</span></button>
+    <button class="nav-btn" data-tab="stats"><span class="nav-icon">рџ“Љ</span><span class="nav-label">Data</span></button>
+  </div>
+</div>
+
+<script>
+const PLANETS = [
+  { id:'earth',   name:'рџЊЌ Earth',      color:'#3b82f6', bg:'#03010a', glow:'rgba(59,130,246,.06)', cost:0, mult:1 },
+  { id:'mars',    name:'рџЄђ Mars',       color:'#ef4444', bg:'#0f0202', glow:'rgba(239,68,68,.06)', cost:5000, mult:2 },
+  { id:'jupiter', name:'рџЄђ Jupiter',    color:'#f59e0b', bg:'#0f0700', glow:'rgba(245,158,11,.06)', cost:25000, mult:4 },
+  { id:'saturn',  name:'рџЄђ Saturn',     color:'#e8c840', bg:'#0a0c01', glow:'rgba(232,200,64,.06)', cost:100000, mult:8 },
+  { id:'neptune', name:'рџЊЉ Neptune',    color:'#06b6d4', bg:'#01060f', glow:'rgba(6,182,212,.06)', cost:500000, mult:16 },
+  { id:'andromeda',name:'вњЁ Andromeda', color:'#a855f7', bg:'#06010f', glow:'rgba(168,85,247,.06)', cost:2000000, mult:32 },
+  { id:'void',    name:'рџ•і The Void',   color:'#ff6b6b', bg:'#000000', glow:'rgba(255,107,107,.06)', cost:10000000, mult:64 },
+];
+
+const KEY = 'space_journey_v2';
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || defaults(); } catch(e) { return defaults(); } }
+function defaults() { return { coins:0, total:0, fuel:1500, maxFuel:1500, level:1, xp:0, tapPower:1, planetIdx:0, tapLv:0, fuelLv:0, regenLv:0, multLv:0, distance:0 }; }
+let d = load();
+function save() { localStorage.setItem(KEY, JSON.stringify(d)); }
+function price(b,l) { return Math.floor(b*Math.pow(1.35,l)); }
+function xpN(l) { return 80+l*45; }
+function regen() { return 2+d.regenLv*0.8; }
+function cMult() { return 1+Math.min(d.multLv,50)*0.02; }
+function pMult() { return PLANETS[d.planetIdx].mult; }
+
+function hasSaveData() {
+  const def = defaults();
+  for (let k in def) { if (d[k] !== def[k]) return true }
+  return false
+}
+function continueGame() { document.getElementById('startOverlay').classList.remove('show') }
+function startNewGame() {
+  const def = defaults();
+  for (let k in def) d[k] = def[k]
+  localStorage.removeItem(KEY)
+  document.getElementById('startOverlay').classList.remove('show')
+  applyTheme(); updateUI()
+}
+
+// в”Ђв”Ђ SPACE BG в”Ђв”Ђ
+const bg = document.getElementById('space-bg');
+const starTypes = ['star-blue','star-white','star-yellow','star-red'];
+for (let i = 0; i < 250; i++) {
+  const s = document.createElement('div'); s.className = `star ${starTypes[i%4]}`;
+  const sz = Math.random()*2+.3;
+  s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${2+Math.random()*5}s;animation-delay:${Math.random()*5}s;opacity:${.1+Math.random()*.4}`;
+  bg.appendChild(s);
+}
+// nebula blobs
+const nebColors = ['rgba(100,40,200,.06)','rgba(60,30,150,.05)','rgba(140,50,200,.04)','rgba(50,80,180,.05)','rgba(200,50,100,.04)'];
+for (let i = 0; i < 8; i++) {
+  const n = document.createElement('div'); n.className = 'nebula-blob';
+  const sz = 150+Math.random()*250;
+  n.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*90+5}%;left:${Math.random()*90+5}%;background:${nebColors[i%5]};--d:${8+Math.random()*8}s;animation-delay:${Math.random()*5}s`;
+  bg.appendChild(n);
+}
+
+// в”Ђв”Ђ ROCKET в”Ђв”Ђ
+const rocket = document.getElementById('rocket');
+const rw = document.getElementById('rocketWrap');
+let combo = 0, lastTap = 0;
+
+rw.addEventListener('click', e => {
+  if (document.querySelector('.shop-view.show')||document.querySelector('.stats-view.show')) return;
+  if (d.fuel < 1) { showToast('в›Ѕ Fuel depleted!'); return; }
+  d.fuel--;
+  const now = Date.now();
+  if (now-lastTap < 1500) combo++; else combo = 1;
+  lastTap = now;
+  const mult = cMult() + Math.min(combo-1,50)*0.02;
+  const gain = Math.floor(d.tapPower * mult * pMult());
+  d.coins += gain; d.total += gain; d.xp += gain;
+  d.distance += gain;
+  const n = xpN(d.level);
+  while (d.xp >= n) { d.xp -= n; d.level++; d.maxFuel += 60; d.fuel = Math.min(d.fuel+150,d.maxFuel); showToast(`рџЊџ LVL ${d.level}`); }
+
+  // save less frequently
+  save();
+
+  // rocket shake
+  rocket.style.transform = 'scale(.88) translateY(2px)';
+  clearTimeout(rocket._st); rocket._st = setTimeout(() => rocket.style.transform = 'scale(1) translateY(0)', 80);
+
+  // particles from rocket body
+  const rect = rocket.getBoundingClientRect();
+  const cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
+  for (let i=0;i<8;i++) {
+    const a = Math.random()*Math.PI*2, sp = 40+Math.random()*50;
+    const p = document.createElement('div'); p.className='tap-particle';
+    const sz = 2+Math.random()*4;
+    const colors = ['#a855f7','#c084fc','#818cf8','#ffd700','#f472b6','#60a5fa'];
+    p.style.cssText = `width:${sz}px;height:${sz}px;left:${cx}px;top:${cy-30}px;background:${colors[i%6]};--tx:${Math.cos(a)*sp}px;--ty:${Math.sin(a)*sp}px;box-shadow:0 0 ${sz*3}px ${colors[i%6]}`;
+    document.body.appendChild(p); setTimeout(()=>p.remove(),700);
+  }
+  // smoke from engine
+  for (let i=0;i<8;i++) {
+    const s = document.createElement('div'); s.className='smoke-particle';
+    const sz = 6+Math.random()*16;
+    const ex = rect.left+rect.width/2+(Math.random()-.5)*15, ey = rect.top+rect.height-5;
+    const dx = (Math.random()-.5)*60, dy = 20+Math.random()*40;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${ex}px;top:${ey}px;background:rgba(200,200,220,.12);--dx:${dx}px;--dy:${-dy}px;--d:${.5+Math.random()*.6}s`;
+    document.body.appendChild(s); setTimeout(()=>s.remove(),1200);
+  }
+  // float text
+  const ft = document.createElement('div'); ft.className='float-text';
+  ft.textContent = `+${gain}` + (mult>1.1?' рџ”Ґ':'') + (pMult()>1?` вњ¦x${pMult()}`:'');
+  const tc = ['#ffd700','#a855f7','#60a5fa','#f472b6'][gain%4];
+  ft.style.cssText += `left:${cx+(Math.random()-.5)*40}px;top:${cy-40}px;color:${tc};text-shadow:0 0 15px ${tc}80`;
+  document.body.appendChild(ft); setTimeout(()=>ft.remove(),1200);
+
+  updateUI();
+});
+
+// в”Ђв”Ђ LAUNCH в”Ђв”Ђ
+document.getElementById('launchBtn').addEventListener('click', () => {
+  if (d.planetIdx >= PLANETS.length-1) { showToast('вњЁ Edge of universe reached!'); return; }
+  const next = PLANETS[d.planetIdx+1];
+  if (d.coins < next.cost) { showToast(`вќЊ Need ${next.cost.toLocaleString()}`); return; }
+  // countdown
+  doCountdown(() => launchTo(next));
+});
+
+function doCountdown(cb) {
+  const ov = document.getElementById('countdownOverlay');
+  const num = document.getElementById('countdownNum');
+  let c = 3;
+  ov.classList.add('show');
+  num.textContent = c; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'countPop .8s ease-out forwards';
+  const iv = setInterval(() => {
+    c--;
+    if (c > 0) {
+      num.textContent = c; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'countPop .8s ease-out forwards';
+    } else {
+      clearInterval(iv);
+      num.textContent = 'рџљЂ'; num.style.animation = 'none'; void num.offsetWidth;
+      num.style.cssText = 'font-size:60px;opacity:1;transform:scale(1);animation:countPop .8s ease-out forwards';
+      setTimeout(() => { ov.classList.remove('show'); cb(); }, 600);
+    }
+  }, 800);
+}
+
+function launchTo(next) {
+  const overlay = document.getElementById('warpOverlay');
+  overlay.classList.add('active');
+  const ws = overlay.querySelector('.warp-stars'); ws.innerHTML = '';
+  for (let i=0;i<60;i++) {
+    const l = document.createElement('div'); l.className='warp-line';
+    const colors = ['#a855f7','#c084fc','#818cf8','#f472b6','#60a5fa'];
+    l.style.cssText = `top:${Math.random()*100}%;width:${40+Math.random()*120}px;--c:${colors[i%5]};animation-delay:${Math.random()*.5}s;animation-duration:${.3+Math.random()*.4}s;opacity:${.1+Math.random()*.6}`;
+    ws.appendChild(l);
+  }
+  // warp rings
+  for (let i=0;i<3;i++) {
+    setTimeout(() => {
+      const r = document.createElement('div'); r.className='warp-ring';
+      r.style.animationDelay = '0s'; r.style.borderColor = `rgba(168,85,247,${.3-i*.08})`;
+      document.body.appendChild(r); setTimeout(()=>r.remove(),1600);
+    }, i*200);
+  }
+
+  rw.classList.add('flying');
+  setTimeout(() => {
+    d.planetIdx++; d.distance = 0; d.coins = Math.floor(d.coins * 0.35);
+    save(); updateUI(); applyTheme();
+    overlay.classList.remove('active'); rw.classList.remove('flying'); ws.innerHTML = '';
+    showToast(`рџљЂ Arrived at ${next.name}!`);
+  }, 1800);
+}
+
+function applyTheme() {
+  const p = PLANETS[d.planetIdx];
+  const app = document.getElementById('app');
+  app.style.background = `radial-gradient(ellipse at 50% 0%, ${p.color}18 0%, ${p.bg} 70%)`;
+  document.getElementById('bgGlow').style.background = `radial-gradient(circle, ${p.glow} 0%, transparent 70%)`;
+  document.getElementById('xpFill').style.background = `linear-gradient(90deg, ${p.color}66, ${p.color})`;
+}
+
+// в”Ђв”Ђ FUEL REGEN в”Ђв”Ђ
+setInterval(() => {
+  if (d.fuel < d.maxFuel) { d.fuel = Math.min(d.maxFuel, d.fuel + regen() * 0.1); save(); updateUI(); }
+}, 100);
+
+// в”Ђв”Ђ NAV в”Ђв”Ђ
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  const t = b.dataset.tab;
+  document.getElementById('shopView').classList.toggle('show',t==='shop');
+  document.getElementById('statsView').classList.toggle('show',t==='stats');
+  if(t==='stats') renderStats();
+  if(t==='shop') renderShop();
+}));
+
+// в”Ђв”Ђ SHOP в”Ђв”Ђ
+function renderShop() {
+  const g = document.getElementById('shopGrid');
+  const items = [
+    ['tapLv','рџљЂ','Thrust Power',90,`+${d.tapPower} в†’ +${d.tapPower+1}`],
+    ['fuelLv','в›Ѕ','Fuel Tank',180,`${d.maxFuel} в†’ ${d.maxFuel+60}`],
+    ['regenLv','вљЎ','Fuel Regen',140,`+${regen().toFixed(1)} в†’ +${(regen()+.8).toFixed(1)}/s`],
+    ['multLv','рџ’«','Combo Engine',350,`x${cMult().toFixed(2)} в†’ x${(cMult()+.02).toFixed(2)}`],
+  ];
+  g.innerHTML = items.map(([k,ic,nm,b,desc]) => {
+    const lv = d[k], pr = price(b,lv), can = d.coins >= pr;
+    return `<div class="shop-item ${can?'can-buy':''}" data-key="${k}" data-price="${pr}">
+      <div class="shop-icon">${ic}</div>
+      <div class="shop-info"><div class="shop-name">${nm}</div><div class="shop-desc">${desc}</div></div>
+      <div class="shop-right"><div class="shop-level">Lv${lv}</div>
+      <button class="shop-btn ${can?'':'cant'}" ${can?'':'disabled'}>${pr.toLocaleString()}вњ¦</button></div></div>`;
+  }).join('');
+  g.querySelectorAll('.shop-item').forEach(it => it.addEventListener('click', () => {
+    const k = it.dataset.key, pr = parseInt(it.dataset.price);
+    if (d.coins >= pr) { d.coins -= pr; d[k]++; if(k==='fuelLv'){d.maxFuel+=60;d.fuel=Math.min(d.fuel+60,d.maxFuel);}
+    save(); updateUI(); renderShop(); showToast(`вњ… ${it.querySelector('.shop-name').textContent} Lv${d[k]}`); }
+  }));
+  document.getElementById('shopCoinDisplay').textContent = d.coins.toLocaleString();
+}
+
+// в”Ђв”Ђ STATS в”Ђв”Ђ
+function renderStats() {
+  const el = document.getElementById('statsContent');
+  const p = PLANETS[d.planetIdx];
+  const next = d.planetIdx < PLANETS.length-1 ? PLANETS[d.planetIdx+1] : null;
+  const stats = [
+    ['рџЊџ TOTAL EARNED', d.total.toLocaleString(), '#ffd700'],
+    ['рџљЂ CURRENT PLANET', p.name, p.color],
+    ['вњ¦ PLANET MULT', `x${pMult()}`, '#a855f7'],
+    ['рџЄђ THRUST POWER', `+${d.tapPower}`, '#c084fc'],
+    ['в›Ѕ FUEL CAPACITY', String(d.maxFuel), '#818cf8'],
+    ['вљЎ REGEN RATE', `+${regen().toFixed(1)}/s`, '#4ade80'],
+    ['рџ’« COMBO ENGINE', `x${cMult().toFixed(2)}`, '#f472b6'],
+    ['рџЏ† PILOT LEVEL', String(d.level), '#a855f7'],
+    ['рџ›ё DISTANCE', `${d.distance.toLocaleString()} / ${next?next.cost.toLocaleString():'в€ћ'}`, '#fb923c'],
+  ];
+  el.innerHTML = stats.map(([l,v,c]) =>
+    `<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-value" style="color:${c}">${v}</span></div>`
+  ).join('');
+}
+
+// в”Ђв”Ђ UI в”Ђв”Ђ
+function updateUI() {
+  document.getElementById('coinDisplay').textContent = d.coins.toLocaleString();
+  document.getElementById('tapPowerDisplay').textContent = d.tapPower;
+  document.getElementById('levelDisplay').textContent = d.level;
+  const now = Date.now();
+
+  const p = PLANETS[d.planetIdx];
+  document.getElementById('planetNameDisplay').textContent = p.name;
+  document.getElementById('planetMultDisplay').textContent = `x${pMult()}`;
+  document.getElementById('planetMultDisplay').style.setProperty('--pc', p.color);
+  document.getElementById('planetDot').style.cssText = `background:${p.color};box-shadow:0 0 6px ${p.color}`;
+
+  const mult = cMult() + Math.min(Math.max(0,(now-lastTap)<1500?combo-1:0),50)*0.02;
+  document.getElementById('comboDisplay').textContent = `x${mult.toFixed(1)}`;
+
+  const needed = xpN(d.level);
+  document.getElementById('xpFill').style.width = `${Math.min(100,(d.xp/needed)*100)}%`;
+  document.getElementById('xpLabel').textContent = `${Math.floor(d.xp)}/${needed}`;
+
+  document.getElementById('fuelDisplay').textContent = Math.floor(d.fuel);
+  document.getElementById('maxFuelDisplay').textContent = d.maxFuel;
+  const fp = Math.min(100,(d.fuel/d.maxFuel)*100);
+  const ff = document.getElementById('fuelFill');
+  ff.style.width = fp+'%';
+  const pC = p.color;
+  ff.style.background = fp>30?`linear-gradient(90deg,${pC}88,${pC})`:fp>10?`linear-gradient(90deg,#f59e0b,#fb923c)`:`linear-gradient(90deg,#ef4444,#f87171)`;
+
+  const ci = document.getElementById('comboIndicator');
+  if (combo > 2 && (now-lastTap) < 1500) {
+    ci.textContent = `рџ”Ґ x${mult.toFixed(1)}`; ci.classList.add('show');
+    ci.style.color = `rgb(${Math.min(255,100+combo*5)},${Math.max(100,200-combo*3)},50)`;
+  } else ci.classList.remove('show');
+
+  const nx = d.planetIdx < PLANETS.length-1 ? PLANETS[d.planetIdx+1] : null;
+  if (nx) {
+    const pct = Math.min(100,(d.distance/nx.cost)*100);
+    document.getElementById('destFill').style.width = pct+'%';
+    document.getElementById('destFill').style.setProperty('--fc1', p.color);
+    document.getElementById('destFill').style.setProperty('--fc2', nx.color);
+    document.getElementById('fromPlanet').textContent = p.name;
+    document.getElementById('toPlanet').textContent = `в†’ ${nx.name}`;
+    const btn = document.getElementById('launchBtn');
+    if (d.coins >= nx.cost) {
+      btn.classList.add('show');
+      btn.style.background = `linear-gradient(135deg, ${nx.color}, ${p.color})`;
+      btn.style.setProperty('--gs', `${nx.color}44`);
+    } else btn.classList.remove('show');
+  } else {
+    document.getElementById('destFill').style.width = '100%';
+    document.getElementById('fromPlanet').textContent = p.name;
+    document.getElementById('toPlanet').textContent = 'в†’ в€ћ';
+    document.getElementById('launchBtn').classList.remove('show');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(()=>t.classList.remove('show'), 1500);
+}
+
+applyTheme(); updateUI();
+if (hasSaveData()) {
+  document.getElementById('startOverlay').classList.add('show')
+}
+setInterval(save, 15000);
+</script>
+</body>
+</html>
